@@ -11,6 +11,12 @@ public class TreeViewLearn : EditorWindow
     private TreeView treeView;
     private TreeViewState state;
 
+    [MenuItem("Test/TreeViewLearn/Open Window")]
+    public static void OpenWindow()
+    {
+        GetWindow<TreeViewLearn>();
+    }
+
     private void OnEnable()
     {
         state = new TreeViewState();
@@ -22,12 +28,6 @@ public class TreeViewLearn : EditorWindow
     {
         var rect = GUILayoutUtility.GetRect(0, 100000, 0, 100000);
         treeView.OnGUI(rect);
-    }
-
-    [MenuItem("Test/TreeViewLearn/Open Window")]
-    public static void OpenWindow()
-    {
-        GetWindow<TreeViewLearn>();
     }
 }
 
@@ -79,7 +79,11 @@ public class MyTreeView : TreeView
 
     protected override void RenameEnded(RenameEndedArgs args)
     {
-        args.acceptedRename = !string.IsNullOrEmpty(args.newName) &&args.newName.Length <= 8;
+        var item = FindItem(args.itemID, rootItem);
+        if (item == null)
+            return;
+
+        item.displayName = args.newName;
     }
 
     protected override bool CanMultiSelect(TreeViewItem item)
