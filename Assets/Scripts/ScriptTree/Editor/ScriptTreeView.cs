@@ -8,22 +8,7 @@ using UnityEngine;
 
 public class ScriptTreeView : TreeView
 {
-    private class ScriptItemView
-    {
-        public int id;
-        public string display;
-        public bool canRemove = true;
-        public ScriptItemView parent;
-        public TreeViewItem displayItem;
-        public List<ScriptItemView> children = new List<ScriptItemView>();
-        public Action<ScriptItemView, ScriptTreeView> onClick;
 
-        public void AddChild(ScriptItemView item)
-        {
-            children.Add(item);
-            item.parent = this;
-        }
-    }
 
     private ScriptItemView dataSourceRoot;
 
@@ -32,62 +17,8 @@ public class ScriptTreeView : TreeView
         showBorder = true;
         showAlternatingRowBackgrounds = true;
         dataSourceRoot = new ScriptItemView();
-        var test = NewTestItem();
-        test.display = "#if";
-        dataSourceRoot.AddChild(test);
 
-        //var addItem = NewTestItem();
-        //test.AddChild(addItem);
-        //addItem.display = "...";
-        //addItem.onClick += (ScriptItemView item, ScriptTreeView view) =>
-        //{
-        //    var index = item.parent.children.IndexOf(item);
-        //    var newitem = NewTestItem();
-        //    newitem.parent = item.parent;
-        //    newitem.display = "#case";
-        //    item.parent.children.Insert(index, newitem);
-        //    view.Reload();
-        //};
-        var def = NewTestItem();
-        def.display = "default";
-        def.canRemove = false;
-        test.AddChild(def);
-        def.AddChild(CreateInserter());
-        test.AddChild(CreateInserter((newitem) =>
-        {
-            newitem.display = "#case";
-            newitem.AddChild(CreateInserter());
-        }));
-
-        //addItem = NewTestItem();
-        //dataSourceRoot.AddChild(addItem);
-        //addItem.display = "...";
-        //addItem.onClick += (ScriptItemView item, ScriptTreeView view) =>
-        //{
-        //    var index = item.parent.children.IndexOf(item);
-        //    item.parent.children.Insert(index, NewTestItem());
-        //    view.Reload();
-        //};
-
-        dataSourceRoot.AddChild(CreateInserter());
-    }
-
-    private ScriptItemView CreateInserter(Action<ScriptItemView> init = null)
-    {
-        var addItem = NewTestItem();
-        addItem.canRemove = false;
-        addItem.display = "...";
-        addItem.onClick += (ScriptItemView item, ScriptTreeView view) =>
-        {
-            var index = item.parent.children.IndexOf(item);
-            var newitem = NewTestItem();
-            newitem.parent = item.parent;
-            item.parent.children.Insert(index, newitem);
-            init?.Invoke(newitem);
-            view.Reload();
-        };
-
-        return addItem;
+        dataSourceRoot.AddChild(ScriptTreeViewItemHelper.BuildIfStruct(null));
     }
 
     public ScriptTreeView(TreeViewState state, MultiColumnHeader multiColumnHeader) : base(state, multiColumnHeader)
@@ -130,7 +61,7 @@ public class ScriptTreeView : TreeView
                 displayName = testItem.display,
                 depth = depth
             };
-            testItem.displayItem = item;
+            //testItem.displayItem = item;
 
             list.Add(item);
             if (testItem.children.Count > 0)
