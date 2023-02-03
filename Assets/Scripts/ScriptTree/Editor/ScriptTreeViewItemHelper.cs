@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEditor;
 using UnityEditor.IMGUI.Controls;
+using UnityEngine;
 
 namespace ScriptTree
 {
@@ -137,14 +138,14 @@ namespace ScriptTree
             stats.canRename = false;
         }
 
-        private static ScriptItemView BuildParameter(string paramName, Action<ScriptItemView, ScriptTreeView> onGUI = null)
+        private static ScriptItemView BuildParameter(string paramName)
         {
             var root = NewScriptItemView(paramName);
             root.paramName = paramName;
             root.canRemove = false;
             root.canRename = false;
             root.isParameter = true;
-            root.onInspector = onGUI;
+            root.onInspector = null;
             root.display = $"{paramName}: null";
             root.onClick = (item, view) =>
             {
@@ -160,6 +161,8 @@ namespace ScriptTree
                 }, ParameterTypeInfoes.tany);
             };
 
+            SetParameterAsLiteral(root, "null");
+
             return root;
         }
 
@@ -168,7 +171,6 @@ namespace ScriptTree
             view.children.Clear();
             view.data = value;
             view.display = $"{view.paramName}: literal: {value}";
-            view.displayItem.displayName = view.display;
             view.onInspector = (item, treeView) =>
             {
                 value = view.data as string;
@@ -244,6 +246,14 @@ namespace ScriptTree
 
         private static void InsertFunctionParamsOverNode(ScriptItemView view, ScriptTreeFuncBase func)
         {
+            view.onInspector = (item, treeView) =>
+            {
+                if (GUILayout.Button("使用Literal"))
+                {
+                    SetParameterAsLiteral(view, "null");
+                    treeView.Reload();
+                }
+            };
             view.children.Clear();
             foreach (var info in func.parameterInfoes)
             {

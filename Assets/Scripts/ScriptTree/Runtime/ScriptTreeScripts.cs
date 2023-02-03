@@ -279,6 +279,11 @@ namespace ScriptTree
                 return null;
             });
 
+            RegisterFunction("Vector3 NewVector3 x:float y:float z:float", (state, state2) =>
+            {
+                return new Vector3(state.CheckOutParameter<float>(0), state.CheckOutParameter<float>(1), state.CheckOutParameter<float>(2));
+            });
+
             RegisterFunction("void Teleport entityId:int position:Vector3", (state, state2) =>
             {
                 int id = state.CheckOutParameter<int>(0);

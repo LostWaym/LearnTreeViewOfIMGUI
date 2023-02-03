@@ -193,7 +193,7 @@ public class ScriptTreeView : TreeView
 
         if (item.isParameter)
         {
-            menu.AddItem(new GUIContent("使用Literal"), false, () => { ScriptTreeViewItemHelper.SetParameterAsLiteral(item, "null");Repaint(); });
+            menu.AddItem(new GUIContent("使用Literal"), false, () => { ScriptTreeViewItemHelper.SetParameterAsLiteral(item, "null");Reload(); });
             menu.AddSeparator("");
         }
         if (item?.canRemove ?? false)
