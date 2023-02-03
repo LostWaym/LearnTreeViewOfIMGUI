@@ -246,14 +246,17 @@ namespace ScriptTree
 
         private static void InsertFunctionParamsOverNode(ScriptItemView view, ScriptTreeFuncBase func)
         {
-            view.onInspector = (item, treeView) =>
+            if (view.isParameter)
             {
-                if (GUILayout.Button("使用Literal"))
+                view.onInspector = (item, treeView) =>
                 {
-                    SetParameterAsLiteral(view, "null");
-                    treeView.Reload();
-                }
-            };
+                    if (GUILayout.Button("使用Literal"))
+                    {
+                        SetParameterAsLiteral(view, "null");
+                        treeView.Reload();
+                    } 
+                };
+            }
             view.children.Clear();
             foreach (var info in func.parameterInfoes)
             {
