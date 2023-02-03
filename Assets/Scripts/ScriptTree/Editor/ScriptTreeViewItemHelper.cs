@@ -7,6 +7,8 @@ using UnityEditor;
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;
 
+using Helper = ScriptTree.ScriptTreeViewItemHelper;
+
 namespace ScriptTree
 {
     public class ScriptItemView
@@ -23,12 +25,90 @@ namespace ScriptTree
         public List<ScriptItemView> children = new List<ScriptItemView>();
         public Action<ScriptItemView, ScriptTreeView> onClick;
         public Action<ScriptItemView, ScriptTreeView> onInspector;
+        public Action<ScriptItemView, ScriptTreeView> onRemove;
         public object data;
 
         public void AddChild(ScriptItemView item)
         {
             children.Add(item);
             item.parent = this;
+        }
+    }
+
+    public class IfStatScriptItemView : ScriptItemView
+    {
+        public IfStatNode node;
+
+        public ScriptItemView caseInserter;
+        public ScriptItemView def;
+
+
+        public void Load(IfStatNode node)
+        {
+            children.Clear();
+            var root = this;
+            root.display = "#if";
+
+            def = Helper.NewScriptItemView("default");
+            caseInserter = Helper.BuildInserter(BuildCase, "$newCase");
+            caseInserter.hint = "新建条件分支";
+
+            def.AddChild(Helper.BuildActionInserter());
+
+            root.AddChild(caseInserter);
+            root.AddChild(def);
+
+            def.canRemove = false;
+            def.canRename = false;
+            caseInserter.canRemove = false;
+            caseInserter.canRename = false;
+
+
+        }
+
+        private ScriptItemView BuildCase()
+        {
+            var item = Helper.NewScriptItemView<IfCaseDataItemView>("case");
+            item.canRemove = true;
+            item.canRename = false;
+            OnCaseCreate(item);
+            return item;
+        }
+
+        private void OnCaseCreate(ScriptItemView view)
+        {
+            IfCaseData data = new IfCaseData();
+            node.cases.Add(data);
+            view.onRemove = (v, tree) =>
+            {
+                node.cases.Remove(data);
+            };
+        }
+
+        public void OnCaseRemoved(IfCaseData caseData)
+        {
+
+        }
+    }
+
+    public class IfCaseDataItemView : ScriptItemView
+    {
+        public IfCaseData caseData;
+
+        public ScriptItemView condition;
+        public ScriptItemView stats;
+
+        public void Init()
+        {
+            condition = Helper.BuildParameter("condition");
+            stats = Helper.NewScriptItemView("stats");
+
+            stats.AddChild(Helper.BuildActionInserter("$..."));
+        }
+
+        public void Bind(IfCaseData data)
+        {
+            caseData = data;
         }
     }
 
@@ -77,11 +157,24 @@ namespace ScriptTree
 
         public static void ResetCounter() => counter = 0;
 
-        private static ScriptItemView NewScriptItemView(string title = null)
+        public static ScriptItemView NewScriptItemView(string title = null)
         {
-            ScriptItemView view = new ScriptItemView();
-            view.id = ++counter;
-            view.display = title ?? $"#{counter}";
+            ScriptItemView view = new ScriptItemView
+            {
+                id = ++counter,
+                display = title ?? $"#{counter}"
+            };
+
+            return view;
+        }
+
+        public static T NewScriptItemView<T>(string title = null) where T : ScriptItemView, new()
+        {
+            var view = new T
+            {
+                id = ++counter,
+                display = title ?? $"#{counter}"
+            };
 
             return view;
         }
@@ -118,7 +211,7 @@ namespace ScriptTree
         }
 
         //将view打造成CaseStruct
-        private static void BuildCaseStructOverView(ScriptItemView view)
+        public static void BuildCaseStructOverView(ScriptItemView view)
         {
             view.children.Clear();
             view.display = "#case";
@@ -138,7 +231,7 @@ namespace ScriptTree
             stats.canRename = false;
         }
 
-        private static ScriptItemView BuildParameter(string paramName)
+        public static ScriptItemView BuildParameter(string paramName)
         {
             var root = NewScriptItemView(paramName);
             root.paramName = paramName;
@@ -207,7 +300,26 @@ namespace ScriptTree
             return addItem;
         }
 
-        public static ScriptItemView BuildActionInserter(string title = null)
+        public static ScriptItemView BuildInserter(Func<ScriptItemView> getter, string title = null)
+        {
+            var addItem = NewScriptItemView();
+            addItem.canRemove = false;
+            addItem.canRename = false;
+            addItem.display = title ?? "$...";
+            addItem.hint = "新空表达式";
+            addItem.onClick += (ScriptItemView item, ScriptTreeView view) =>
+            {
+                var index = item.parent.children.IndexOf(item);
+                var newitem = getter();
+                newitem.parent = item.parent;
+                item.parent.children.Insert(index, newitem);
+                view.Reload();
+            };
+
+            return addItem;
+        }
+
+        public static ScriptItemView BuildActionInserter(string title = null, Action<ScriptTreeFuncBase> insertee = null)
         {
             var addItem = NewScriptItemView();
             addItem.canRemove = false;
@@ -225,6 +337,7 @@ namespace ScriptTree
                     var newitem = BuildFunctionNode(f);
                     newitem.parent = item.parent;
                     item.parent.children.Insert(index, newitem);
+                    insertee?.Invoke(f);
                     view.Reload();
                 }, ParameterTypeInfoes.tany);
             };

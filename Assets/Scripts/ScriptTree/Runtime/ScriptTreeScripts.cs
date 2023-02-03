@@ -350,10 +350,12 @@ namespace ScriptTree
 
         private static void InsertFuncToType2Funcs(ScriptTreeFuncBase func)
         {
-            if (func.returnType != null)
+            if (func.returnType == null)
             {
                 GetOrCreateListOfType2Funcs("void").Add(func);
+                return;
             }
+            GetOrCreateListOfType2Funcs(func.returnType.name).Add(func);
         }
 
         public static List<ScriptTreeFuncBase> GetReturnTypeOf(string name)
