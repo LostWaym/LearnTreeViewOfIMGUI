@@ -6,3 +6,5 @@
 /obj
 /Temp
 /*.vsconfig
+/Assets/Plugins/Editor/MiniExcel
+/Assets/Plugins/Editor/MiniExcel.meta

@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Assertions;
@@ -11,21 +12,39 @@ namespace ScriptTree
         public object retValue;
         public int statIndex = -1;
         public BaseStatNode curStatNode;
+        public List<object> parameters;
+
+        public Dictionary<string, object> data = new Dictionary<string, object>();
 
         public void Clear()
         {
             completed = false;
             retValue = null;
+            data.Clear();
+            curStatNode = null;
+            statIndex = -1;
+            parameters = null;
         }
 
         public object GetValue(string key)
         {
-            return null;
+            data.TryGetValue(key, out object value);
+            return value;
         }
 
         public void SetValue(string key, object value)
         {
+            data[key] = value;
+        }
 
+        public T CheckOutParameter<T>(int index)
+        {
+            return (T)parameters[index];
+        }
+
+        public object CheckOutParameter(int index)
+        {
+            return parameters[index];
         }
     }
 
@@ -45,16 +64,10 @@ namespace ScriptTree
         public List<BaseStatNode> children;
     }
 
-    public class AssignStatNode : BaseStatNode
-    {
-        public BaseExpNode keyExp;
-        public BaseExpNode valueExp;
-    }
-
     public class IfStatNode : BaseStatNode
     {
         public List<IfCaseData> cases;
-        public List<BaseExpNode> defaultBlock;
+        public BlockStatNode defaultBlock;
     }
 
     public class IfCaseData
@@ -113,18 +126,10 @@ namespace ScriptTree
             ScriptTreeFuncBase func = ScriptTreeFunctionManager.GetFunction(funcName);
             List<object> funcParameters = new List<object>();
             parameters.ForEach(exp => funcParameters.Add(exp.Execute(state)));
-            func.parameters = funcParameters;
-            return func.Execute();
-        }
-    }
 
-    public class GetVariableExpNode : BaseExpNode
-    {
-        public BaseExpNode keyExp;
-
-        public override object Execute(ScriptTreeState state)
-        {
-            return state.GetValue(keyExp.Execute(state) as string);
+            ScriptTreeState newState = new ScriptTreeState();
+            newState.parameters = funcParameters;
+            return func.Execute(newState);
         }
     }
 
@@ -132,10 +137,12 @@ namespace ScriptTree
     #endregion
 
 
-
+    //扩展方法基础类
     public class ScriptTreeFuncBase
     {
-        public List<object> parameters;
+        public string name;
+        public List<ParameterInfo> parameterInfoes = new List<ParameterInfo>();
+        public ParameterTypeInfo returnType;
         public object Execute()
         {
             return Execute(new ScriptTreeState());
@@ -145,22 +152,61 @@ namespace ScriptTree
         {
             return null;
         }
+
+        //public T CheckOutParameter<T>(int index)
+        //{
+        //    return (T)parameters[index];
+        //}
+
+        //public object CheckOutParameter(int index)
+        //{
+        //    return parameters[index];
+        //}
     }
 
+    public class HardCodeScriptTreeFunc : ScriptTreeFuncBase
+    {
+        public Func<ScriptTreeState, ScriptTreeFuncBase, object> func;
+
+        public override object Execute(ScriptTreeState state)
+        {
+            return func(state, this);
+        }
+    }
+
+    public class ParameterInfo
+    {
+        public string name;
+        public ParameterTypeInfo type;
+
+        public static ParameterInfo Build(string name, ParameterTypeInfo type)
+        {
+            return new ParameterInfo()
+            {
+                name = name,
+                type = type,
+            };
+        }
+    }
+
+    public class ParameterTypeInfo
+    {
+        public string name;
+        public Func<object> getDefaultValue;
+    }
+
+    //由ScriptTree结构构成的扩展函数（软编码）
     public class ScriptTreeFunc : ScriptTreeFuncBase
     {
         public string scriptName;
         public BlockStatNode node;
-        public List<string> parametersName = new List<string>();
         public override object Execute(ScriptTreeState state)
         {
-            Assert.AreEqual(parameters.Count, parameters.Count, $"{scriptName}方法参数数量对不上！");
-
-            for (int i = 0; i < parametersName.Count; i++)
+            for (int i = 0; i < parameterInfoes.Count; i++)
             {
-                string key = parametersName[i];
-                object value = parameters[i];
-                state.SetValue(key, value);
+                var info = parameterInfoes[i];
+                object value = state.CheckOutParameter(i);
+                state.SetValue("@"+info.name, value);
             }
 
             ScriptTreeInterpreter.ExecuteStat(node, state);
@@ -169,23 +215,145 @@ namespace ScriptTree
         }
     }
 
-    public static class ScriptTreeFunctionManager
+    public static partial class ParameterTypeInfoes
     {
-        public static ScriptTreeFuncBase GetFunction(string name)
-        {
-            return null;
-        }
+        public static ParameterTypeInfo tvoid, tint, tfloat, tstring, tbool, tVector3, tany;
     }
 
-    namespace Funcs
+    public static class ScriptTreeFunctionManager
     {
-        public class DebugLog : ScriptTreeFuncBase
+        public static bool hasInit = false;
+        public static Dictionary<string, ScriptTreeFuncBase> m_name2func = new Dictionary<string, ScriptTreeFuncBase>();
+        public static Dictionary<string, List<ScriptTreeFuncBase>> m_type2funcs = new Dictionary<string, List<ScriptTreeFuncBase>>();
+        public static List<ScriptTreeFuncBase> m_allList = new List<ScriptTreeFuncBase>();
+        public static Dictionary<string, ParameterTypeInfo> m_name2type = new Dictionary<string, ParameterTypeInfo>();
+
+        public static ScriptTreeFuncBase GetFunction(string name)
         {
-            public override object Execute(ScriptTreeState state)
+            m_name2func.TryGetValue(name, out var func);
+            return func;
+        }
+
+        public static void InitDefaultTypeAndFunc()
+        {
+            if (hasInit)
+                return;
+            hasInit = true;
+            ParameterTypeInfoes.tvoid = RegisterParameterType("void", () => null);
+            ParameterTypeInfoes.tany = RegisterParameterType("any", () => null);
+            ParameterTypeInfoes.tint = RegisterParameterType("int", () => 0);
+            ParameterTypeInfoes.tfloat = RegisterParameterType("float", () => 0f);
+            ParameterTypeInfoes.tstring = RegisterParameterType("string", () => string.Empty);
+            ParameterTypeInfoes.tbool = RegisterParameterType("bool", () => false);
+            ParameterTypeInfoes.tVector3 = RegisterParameterType("Vector3", () => Vector3.zero);
+
+            RegisterFunction("void SetValue key:string value:any", (state, state2) =>
             {
-                Debug.Log(parameters[0]);
+                state.SetValue(state.CheckOutParameter<string>(0), state.CheckOutParameter(1));
                 return null;
+            });
+
+            RegisterFunction("any GetValue key:string", (state, state2) =>
+            {
+                return state.GetValue(state.CheckOutParameter<string>(0));
+            });
+
+            RegisterFunction("bool Equal left:any right:any", (state, state2) =>
+            {
+                return state.CheckOutParameter(0)?.Equals(state.CheckOutParameter(1));
+            });
+
+            RegisterFunction("void Debug content:any", (state, state2) =>
+            {
+                Debug.Log(state.CheckOutParameter(0));
+                return null;
+            });
+
+            RegisterFunction("void Heal entityId:int healAmount:float", (state, state2) =>
+            {
+                return null;
+            });
+
+            RegisterFunction("int IAdd left:int right:int", (state, state2) =>
+            {
+                return null;
+            });
+
+            RegisterFunction("void Teleport entityId:int position:Vector3", (state, state2) =>
+            {
+                int id = state.CheckOutParameter<int>(0);
+                Vector3 position = state.CheckOutParameter<Vector3>(1);
+                Debug.Log($"实体id={id}想要传送到位置={position}");
+                return null;
+            });
+        }
+
+        public static ScriptTreeFuncBase RegisterFunction(string name, string returnType, List<ParameterInfo> infoes, Func<ScriptTreeState, ScriptTreeFuncBase, object> executeMethod)
+        {
+            HardCodeScriptTreeFunc func = new HardCodeScriptTreeFunc();
+            func.func = executeMethod;
+            func.name = name;
+            func.returnType = GetParameterType(returnType);
+            func.parameterInfoes = infoes;
+            m_name2func.Add(name, func);
+            m_allList.Add(func);
+            InsertFuncToType2Funcs(func);
+            return func;
+        }
+
+        public static ScriptTreeFuncBase RegisterFunction(string descText, Func<ScriptTreeState, ScriptTreeFuncBase, object> executeMethod)
+        {
+            string[] splits = descText.Split(' ');
+            string returnType = splits[0];
+            string name = splits[1];
+            List<ParameterInfo> infoes = new List<ParameterInfo>();
+            for (int i = 2; i < splits.Length; i++)
+            {
+                var paramInfo = splits[i].Split(':');
+                var paramName = paramInfo[0];
+                var paramType = paramInfo.Length > 1 ? paramInfo[1] : "any";
+                infoes.Add(ParameterInfo.Build(paramName, GetParameterType(paramType)));
             }
+
+            return RegisterFunction(name, returnType, infoes, executeMethod);
+        }
+
+        public static ParameterTypeInfo RegisterParameterType(string name, Func<object> defValue)
+        {
+            ParameterTypeInfo info = new ParameterTypeInfo();
+            info.name = name;
+            info.getDefaultValue = defValue;
+            m_name2type[name] = info;
+            return info;
+        }
+
+        public static ParameterTypeInfo GetParameterType(string name)
+        {
+            return m_name2type[name];
+        }
+
+        private static List<ScriptTreeFuncBase> GetOrCreateListOfType2Funcs(string typeName)
+        {
+            if (!m_type2funcs.TryGetValue(typeName, out var list))
+            {
+                list = new List<ScriptTreeFuncBase>();
+                m_type2funcs[typeName] = list;
+            }
+
+            return list;
+        }
+
+        private static void InsertFuncToType2Funcs(ScriptTreeFuncBase func)
+        {
+            if (func.returnType != null)
+            {
+                GetOrCreateListOfType2Funcs("void").Add(func);
+            }
+        }
+
+        public static List<ScriptTreeFuncBase> GetReturnTypeOf(string name)
+        {
+            return GetOrCreateListOfType2Funcs(name);
         }
     }
 
@@ -206,14 +374,11 @@ namespace ScriptTree
                 state.statIndex++;
                 state.curStatNode = root;
 
-                if (root is AssignStatNode assignStatNode)
-                {
-                    state.SetValue(assignStatNode.keyExp.Execute(state) as string, assignStatNode.valueExp.Execute(state));
-                }
-                else if (root is ReturnStatNode returnStatNode)
+                if (root is ReturnStatNode returnStatNode)
                 {
                     state.completed = true;
                     state.retValue = returnStatNode.exp.Execute(state);
+                    return;
                 }
                 else if (root is IfStatNode ifStatNode)
                 {
@@ -232,7 +397,7 @@ namespace ScriptTree
                         }
                         else if (ifStatNode.defaultBlock != null)
                         {
-                            ExecuteStat(trueblock, state);
+                            ExecuteStat(ifStatNode.defaultBlock, state);
                             if (state.completed)
                             {
                                 return;

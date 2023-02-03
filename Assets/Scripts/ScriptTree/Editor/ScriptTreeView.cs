@@ -19,6 +19,7 @@ public class ScriptTreeView : TreeView
         dataSourceRoot = new ScriptItemView();
 
         dataSourceRoot.AddChild(ScriptTreeViewItemHelper.BuildIfStruct(null));
+        dataSourceRoot.AddChild(ScriptTreeViewItemHelper.BuildActionInserter());
     }
 
     public ScriptTreeView(TreeViewState state, MultiColumnHeader multiColumnHeader) : base(state, multiColumnHeader)
@@ -50,6 +51,28 @@ public class ScriptTreeView : TreeView
         return list;
     }
 
+    //damn it!
+    protected override IList<int> GetDescendantsThatHaveChildren(int id)
+    {
+        List<int> ids = new List<int>();
+        var item = GetScriptItem(id);
+        if (item == null)
+            return ids;
+
+        Stack<ScriptItemView> stack = new Stack<ScriptItemView>();
+        stack.Push(item);
+        while (stack.Count > 0)
+        {
+            item = stack.Pop();
+            ids.Add(item.id);
+            foreach (var child in item.children)
+            {
+                stack.Push(child);
+            }
+        }
+        return ids;
+    }
+
     private void AddChildRescursive(int depth, List<ScriptItemView> children, List<TreeViewItem> list)
     {
         for (int i = 0; i < children.Count; i++)
@@ -64,15 +87,16 @@ public class ScriptTreeView : TreeView
             //testItem.displayItem = item;
 
             list.Add(item);
+            testItem.displayItem = item;
             if (testItem.children.Count > 0)
             {
                 if (IsExpanded(item.id))
                 {
-                    item.children = CreateChildListForCollapsedParent();
+                    AddChildRescursive(depth + 1, testItem.children, list);
                 }
                 else
                 {
-                    AddChildRescursive(depth + 1, testItem.children, list);
+                    item.children = CreateChildListForCollapsedParent();
                 }
             }
         }
@@ -80,7 +104,7 @@ public class ScriptTreeView : TreeView
 
     protected override void DoubleClickedItem(int id)
     {
-        var item = GetTestItem(id);
+        var item = GetScriptItem(id);
         if (item != null)
         {
             //item.AddChild(NewTestItem());
@@ -93,6 +117,19 @@ public class ScriptTreeView : TreeView
         base.SingleClickedItem(id);
     }
 
+    public ScriptItemView selectedView;
+    protected override void SelectionChanged(IList<int> selectedIds)
+    {
+        if (selectedIds.Count == 0)
+        {
+            selectedView = null;
+            return;
+        }
+
+        int id = selectedIds[0];
+        selectedView = GetScriptItem(id);
+    }
+
 
     protected override void ContextClickedItem(int id)
     {
@@ -102,7 +139,7 @@ public class ScriptTreeView : TreeView
         menu.ShowAsContext();
     }
 
-    private ScriptItemView GetTestItem(int id, ScriptItemView root)
+    private ScriptItemView GetScriptItem(int id, ScriptItemView root)
     {
         if (root == null)
         {
@@ -114,7 +151,7 @@ public class ScriptTreeView : TreeView
             if (item.id == id)
                 return item;
 
-            var ret = GetTestItem(id, item); ;
+            var ret = GetScriptItem(id, item); ;
             if (ret != null)
                 return ret;
         }
@@ -122,9 +159,9 @@ public class ScriptTreeView : TreeView
         return null;
     }
 
-    private ScriptItemView GetTestItem(int id)
+    private ScriptItemView GetScriptItem(int id)
     {
-        return GetTestItem(id, dataSourceRoot);
+        return GetScriptItem(id, dataSourceRoot);
     }
 
     int counter = 0;
@@ -152,8 +189,13 @@ public class ScriptTreeView : TreeView
 
     private void AddCertainMenuItem(GenericMenu menu, int id)
     {
-        var item = GetTestItem(id);
+        var item = GetScriptItem(id);
 
+        if (item.isParameter)
+        {
+            menu.AddItem(new GUIContent("使用Literal"), false, () => { ScriptTreeViewItemHelper.SetParameterAsLiteral(item, "null");Repaint(); });
+            menu.AddSeparator("");
+        }
         if (item?.canRemove ?? false)
         {
             menu.AddItem(new GUIContent("移除"), false, () => {
@@ -178,14 +220,15 @@ public class ScriptTreeView : TreeView
 
     protected override bool CanRename(TreeViewItem item)
     {
-        return true;
+        var sitem = GetScriptItem(item.id);
+        return sitem == null ? false : sitem.canRename;
     }
 
     protected override void RenameEnded(RenameEndedArgs args)
     {
         if (args.acceptedRename)
         {
-            var item2 = GetTestItem(args.itemID);
+            var item2 = GetScriptItem(args.itemID);
             item2.display = args.newName;
             Reload();
         }

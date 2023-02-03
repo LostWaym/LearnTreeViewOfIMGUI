@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using ScriptTree;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.IMGUI.Controls;
@@ -17,6 +18,7 @@ public class ScriptTreeViewWindow : EditorWindow
 
     private void OnEnable()
     {
+        ScriptTreeFunctionManager.InitDefaultTypeAndFunc();
         state = new TreeViewState();
         treeView = new ScriptTreeView(state);
         treeView.Reload();
@@ -26,9 +28,16 @@ public class ScriptTreeViewWindow : EditorWindow
     {
         var rect = new Rect(Vector2.zero, position.size);
 
-        treeView.OnGUI(SplitRect(rect, 200, 0));
-        GUILayout.BeginArea(SplitRect(rect, 200, 1), "Inspector", GUI.skin.window);
-        //GUILayout.Label("xx");
+        treeView.OnGUI(SplitRect(rect, 350, 0));
+        GUILayout.BeginArea(SplitRect(rect, 350, 1), "Inspector", GUI.skin.window);
+        if (treeView.selectedView != null)
+        {
+            if (!string.IsNullOrEmpty(treeView.selectedView.hint))
+            {
+                EditorGUILayout.LabelField(treeView.selectedView.hint);
+            }
+            treeView.selectedView.onInspector?.Invoke(treeView.selectedView, treeView);
+        }
         GUILayout.EndArea();
     }
 
