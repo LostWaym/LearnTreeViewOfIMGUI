@@ -434,7 +434,8 @@ public static class ScriptTreeItemViewHelper
         }
         else
         {
-            list = ScriptTreeFunctionManager.GetReturnTypeOf(info.name);
+            list = new List<ScriptTreeFuncBase>(ScriptTreeFunctionManager.GetReturnTypeOf(info.name));
+            ScriptTreeFunctionManager.GetReturnTypeOf(ParameterTypeInfoes.tany.name).ForEach(b => list.Add(b));
         }
 
         List<string> names = list.Select(x => x.name).ToList();

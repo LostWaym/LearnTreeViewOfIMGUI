@@ -316,15 +316,15 @@ namespace ScriptTree
             {
                 return state.CheckOutParameter<string>(0);
             });
-            RegisterFunction("string IntLiteral value:int", false, (state, state2) =>
+            RegisterFunction("int IntLiteral value:int", false, (state, state2) =>
             {
                 return state.CheckOutParameter<int>(0);
             });
-            RegisterFunction("string FloatLiteral value:float", false, (state, state2) =>
+            RegisterFunction("float FloatLiteral value:float", false, (state, state2) =>
             {
                 return state.CheckOutParameter<float>(0);
             });
-            RegisterFunction("string BoolLiteral value:bool", false, (state, state2) =>
+            RegisterFunction("bool BoolLiteral value:bool", false, (state, state2) =>
             {
                 return state.CheckOutParameter<bool>(0);
             });
