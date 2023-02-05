@@ -156,6 +156,7 @@ namespace ScriptTree
     public class ScriptTreeFuncBase
     {
         public string name;
+        public bool canCallSingle;
         public List<ParameterInfo> parameterInfoes = new List<ParameterInfo>();
         public ParameterTypeInfo returnType;
         public object Execute()
@@ -244,6 +245,7 @@ namespace ScriptTree
         public static Dictionary<string, ScriptTreeFuncBase> m_name2func = new Dictionary<string, ScriptTreeFuncBase>();
         public static Dictionary<string, List<ScriptTreeFuncBase>> m_type2funcs = new Dictionary<string, List<ScriptTreeFuncBase>>();
         public static List<ScriptTreeFuncBase> m_allList = new List<ScriptTreeFuncBase>();
+        public static List<ScriptTreeFuncBase> m_allReturnList = new List<ScriptTreeFuncBase>();
         public static Dictionary<string, ParameterTypeInfo> m_name2type = new Dictionary<string, ParameterTypeInfo>();
 
         public static ScriptTreeFuncBase GetFunction(string name)
@@ -265,44 +267,44 @@ namespace ScriptTree
             ParameterTypeInfoes.tbool = RegisterParameterType("bool", () => false, true);
             ParameterTypeInfoes.tVector3 = RegisterParameterType("Vector3", () => Vector3.zero);
 
-            RegisterFunction("void SetValue key:string value:any", (state, state2) =>
+            RegisterFunction("void SetValue key:string value:any", true, (state, state2) =>
             {
                 state.SetValue(state.CheckOutParameter<string>(0), state.CheckOutParameter(1));
                 return null;
             });
 
-            RegisterFunction("any GetValue key:string", (state, state2) =>
+            RegisterFunction("any GetValue key:string", false, (state, state2) =>
             {
                 return state.GetValue(state.CheckOutParameter<string>(0));
             });
 
-            RegisterFunction("bool Equal left:any right:any", (state, state2) =>
+            RegisterFunction("bool Equal left:any right:any", false, (state, state2) =>
             {
                 return state.CheckOutParameter(0)?.Equals(state.CheckOutParameter(1));
             });
 
-            RegisterFunction("void Debug content:any", (state, state2) =>
+            RegisterFunction("void Debug content:any", true, (state, state2) =>
             {
                 Debug.Log(state.CheckOutParameter(0));
                 return null;
             });
 
-            RegisterFunction("void Heal entityId:int healAmount:float", (state, state2) =>
+            RegisterFunction("void Heal entityId:int healAmount:float", true, (state, state2) =>
             {
                 return null;
             });
 
-            RegisterFunction("int IAdd left:int right:int", (state, state2) =>
+            RegisterFunction("int IAdd left:int right:int", false, (state, state2) =>
             {
                 return null;
             });
 
-            RegisterFunction("Vector3 NewVector3 x:float y:float z:float", (state, state2) =>
+            RegisterFunction("Vector3 NewVector3 x:float y:float z:float", false, (state, state2) =>
             {
                 return new Vector3(state.CheckOutParameter<float>(0), state.CheckOutParameter<float>(1), state.CheckOutParameter<float>(2));
             });
 
-            RegisterFunction("void Teleport entityId:int position:Vector3", (state, state2) =>
+            RegisterFunction("void Teleport entityId:int position:Vector3", true, (state, state2) =>
             {
                 int id = state.CheckOutParameter<int>(0);
                 Vector3 position = state.CheckOutParameter<Vector3>(1);
@@ -310,38 +312,43 @@ namespace ScriptTree
                 return null;
             });
 
-            RegisterFunction("string StringLiteral value:string", (state, state2) =>
+            RegisterFunction("string StringLiteral value:string", false, (state, state2) =>
             {
                 return state.CheckOutParameter<string>(0);
             });
-            RegisterFunction("string IntLiteral value:int", (state, state2) =>
+            RegisterFunction("string IntLiteral value:int", false, (state, state2) =>
             {
                 return state.CheckOutParameter<int>(0);
             });
-            RegisterFunction("string FloatLiteral value:float", (state, state2) =>
+            RegisterFunction("string FloatLiteral value:float", false, (state, state2) =>
             {
                 return state.CheckOutParameter<float>(0);
             });
-            RegisterFunction("string BoolLiteral value:bool", (state, state2) =>
+            RegisterFunction("string BoolLiteral value:bool", false, (state, state2) =>
             {
                 return state.CheckOutParameter<bool>(0);
             });
         }
 
-        public static ScriptTreeFuncBase RegisterFunction(string name, string returnType, List<ParameterInfo> infoes, Func<ScriptTreeState, ScriptTreeFuncBase, object> executeMethod)
+        public static ScriptTreeFuncBase RegisterFunction(string name, string returnType, bool canCallSingle, List<ParameterInfo> infoes, Func<ScriptTreeState, ScriptTreeFuncBase, object> executeMethod)
         {
             HardCodeScriptTreeFunc func = new HardCodeScriptTreeFunc();
             func.func = executeMethod;
             func.name = name;
             func.returnType = GetParameterType(returnType);
             func.parameterInfoes = infoes;
+            func.canCallSingle = canCallSingle;
             m_name2func.Add(name, func);
             m_allList.Add(func);
+            if (returnType != ParameterTypeInfoes.tvoid.name)
+            {
+                m_allReturnList.Add(func);
+            }
             InsertFuncToType2Funcs(func);
             return func;
         }
 
-        public static ScriptTreeFuncBase RegisterFunction(string descText, Func<ScriptTreeState, ScriptTreeFuncBase, object> executeMethod)
+        public static ScriptTreeFuncBase RegisterFunction(string descText, bool canCallSingle, Func<ScriptTreeState, ScriptTreeFuncBase, object> executeMethod)
         {
             string[] splits = descText.Split(' ');
             string returnType = splits[0];
@@ -355,7 +362,7 @@ namespace ScriptTree
                 infoes.Add(ParameterInfo.Build(paramName, i - 2, GetParameterType(paramType)));
             }
 
-            return RegisterFunction(name, returnType, infoes, executeMethod);
+            return RegisterFunction(name, returnType, canCallSingle, infoes, executeMethod);
         }
 
         public static ParameterTypeInfo RegisterParameterType(string name, Func<object> defValue, bool canBeLiteral = false)

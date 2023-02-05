@@ -51,6 +51,6 @@ public class SelectionFormWindow : EditorWindow
 
     private void OnDestroy()
     {
-        m_callback(selectedIndex);
+        m_callback?.Invoke(selectedIndex);
     }
 }

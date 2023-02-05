@@ -170,7 +170,7 @@ public static class ScriptTreeItemViewHelper
 
         view.onClick = tree =>
         {
-            OpenSelectionForm(ret =>
+            OpenFuncSelectionForm(ret =>
             {
                 if (ret == null)
                     return;
@@ -255,7 +255,7 @@ public static class ScriptTreeItemViewHelper
                 }
                 else if (index == 1)
                 {
-                    OpenSelectionForm(ret =>
+                    OpenParameterSelectionForm(ret =>
                     {
                         if (ret == null)
                             return;
@@ -378,7 +378,7 @@ public static class ScriptTreeItemViewHelper
                     }
                     else if (index == 1)
                     {
-                        OpenSelectionForm(func =>
+                        OpenFuncSelectionForm(func =>
                         {
                             if (func == null)
                             {
@@ -402,12 +402,35 @@ public static class ScriptTreeItemViewHelper
     }
 
 
-    public static void OpenSelectionForm(Action<ScriptTreeFuncBase> callback, ParameterTypeInfo info = null)
+    public static void OpenFuncSelectionForm(Action<ScriptTreeFuncBase> callback, ParameterTypeInfo info = null)
     {
         List<ScriptTreeFuncBase> list;
         if (info == null || info == ParameterTypeInfoes.tany)
         {
             list = ScriptTreeFunctionManager.m_allList;
+        }
+        else
+        {
+            list = ScriptTreeFunctionManager.GetReturnTypeOf(info.name);
+        }
+
+        var newList = list.Where((func) =>
+        {
+            return func.canCallSingle;
+        }).ToList();
+        List<string> names = newList.Select(x => x.name).ToList();
+        SelectionFormWindow.OpenWindow(names, (index) =>
+        {
+            callback?.Invoke(index == -1 ? null : newList[index]);
+        }, "选择");
+    }
+
+    public static void OpenParameterSelectionForm(Action<ScriptTreeFuncBase> callback, ParameterTypeInfo info = null)
+    {
+        List<ScriptTreeFuncBase> list;
+        if (info == null || info == ParameterTypeInfoes.tany)
+        {
+            list = ScriptTreeFunctionManager.m_allReturnList;
         }
         else
         {
