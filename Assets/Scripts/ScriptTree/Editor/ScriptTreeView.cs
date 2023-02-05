@@ -8,18 +8,19 @@ using UnityEngine;
 
 public class ScriptTreeView : TreeView
 {
-
-
-    private ScriptItemView dataSourceRoot;
+    private NodeItemView dataSourceRoot;
+    public bool isDirty = false;
+    public void SetDirty(bool toggle = true)
+    {
+        isDirty = toggle;
+        Repaint();
+    }
 
     public ScriptTreeView(TreeViewState state) : base(state)
     {
         showBorder = true;
         showAlternatingRowBackgrounds = true;
-        dataSourceRoot = new ScriptItemView();
-
-        dataSourceRoot.AddChild(ScriptTreeViewItemHelper.BuildIfStruct(null));
-        dataSourceRoot.AddChild(ScriptTreeViewItemHelper.BuildActionInserter());
+        dataSourceRoot = ScriptTreeItemViewHelper.BuildBlock(null);
     }
 
     public ScriptTreeView(TreeViewState state, MultiColumnHeader multiColumnHeader) : base(state, multiColumnHeader)
@@ -59,7 +60,7 @@ public class ScriptTreeView : TreeView
         if (item == null)
             return ids;
 
-        Stack<ScriptItemView> stack = new Stack<ScriptItemView>();
+        Stack<NodeItemView> stack = new Stack<NodeItemView>();
         stack.Push(item);
         while (stack.Count > 0)
         {
@@ -73,7 +74,7 @@ public class ScriptTreeView : TreeView
         return ids;
     }
 
-    private void AddChildRescursive(int depth, List<ScriptItemView> children, List<TreeViewItem> list)
+    private void AddChildRescursive(int depth, List<NodeItemView> children, List<TreeViewItem> list)
     {
         for (int i = 0; i < children.Count; i++)
         {
@@ -81,13 +82,13 @@ public class ScriptTreeView : TreeView
             TreeViewItem item = new TreeViewItem()
             {
                 id = testItem.id,
-                displayName = testItem.display,
+                displayName = testItem.displayName,
                 depth = depth
             };
             //testItem.displayItem = item;
 
             list.Add(item);
-            testItem.displayItem = item;
+            //testItem.displayItem = item;
             if (testItem.children.Count > 0)
             {
                 if (IsExpanded(item.id))
@@ -108,7 +109,7 @@ public class ScriptTreeView : TreeView
         if (item != null)
         {
             //item.AddChild(NewTestItem());
-            item.onClick?.Invoke(item, this);
+            item.onClick?.Invoke(this);
         }
     }
 
@@ -117,7 +118,7 @@ public class ScriptTreeView : TreeView
         base.SingleClickedItem(id);
     }
 
-    public ScriptItemView selectedView;
+    public NodeItemView selectedView;
     protected override void SelectionChanged(IList<int> selectedIds)
     {
         if (selectedIds.Count == 0)
@@ -139,7 +140,7 @@ public class ScriptTreeView : TreeView
         menu.ShowAsContext();
     }
 
-    private ScriptItemView GetScriptItem(int id, ScriptItemView root)
+    private NodeItemView GetScriptItem(int id, NodeItemView root)
     {
         if (root == null)
         {
@@ -159,7 +160,7 @@ public class ScriptTreeView : TreeView
         return null;
     }
 
-    private ScriptItemView GetScriptItem(int id)
+    private NodeItemView GetScriptItem(int id)
     {
         return GetScriptItem(id, dataSourceRoot);
     }
@@ -173,7 +174,6 @@ public class ScriptTreeView : TreeView
         });
         menu.AddItem(new GUIContent("添加"), false, () =>
         {
-            dataSourceRoot.AddChild(NewTestItem());
             Reload();
         });
     }
@@ -191,16 +191,11 @@ public class ScriptTreeView : TreeView
     {
         var item = GetScriptItem(id);
 
-        if (item.isParameter)
-        {
-            menu.AddItem(new GUIContent("使用Literal"), false, () => { ScriptTreeViewItemHelper.SetParameterAsLiteral(item, "null");Reload(); });
-            menu.AddSeparator("");
-        }
         if (item?.canRemove ?? false)
         {
             menu.AddItem(new GUIContent("移除"), false, () => {
-                item.parent?.children.Remove(item);
-                Reload();
+                item.RemoveFromParent();
+                SetDirty();
             });
         }else
         {
@@ -209,11 +204,6 @@ public class ScriptTreeView : TreeView
         menu.AddItem(new GUIContent("复制"), false, () => { });
         menu.AddItem(new GUIContent("插入"), false, () =>
         {
-            if (item != null)
-            {
-                item.AddChild(NewTestItem());
-                Reload();
-            }
         });
         menu.AddItem(new GUIContent("粘贴"), false, () => { });
     }
@@ -229,7 +219,7 @@ public class ScriptTreeView : TreeView
         if (args.acceptedRename)
         {
             var item2 = GetScriptItem(args.itemID);
-            item2.display = args.newName;
+            item2.name = args.newName;
             Reload();
         }
     }

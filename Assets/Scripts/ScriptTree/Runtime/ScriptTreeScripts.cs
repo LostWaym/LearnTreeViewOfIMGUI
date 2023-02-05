@@ -98,21 +98,36 @@ namespace ScriptTree
         }
     }
 
-    public class LiteralExpNode : BaseExpNode
+    public abstract class LiteralExpNode : BaseExpNode
+    {
+        public abstract string GetValueString();
+    }
+
+    public class StringLiteralExpNode : LiteralExpNode
     {
         public string value;
         public override object Execute(ScriptTreeState state)
         {
             return value;
         }
+
+        public override string GetValueString()
+        {
+            return $"\"{value}\"";
+        }
     }
 
-    public class IntLiteralExpNode : BaseExpNode
+    public class IntLiteralExpNode : LiteralExpNode
     {
         public int value;
         public override object Execute(ScriptTreeState state)
         {
             return value;
+        }
+
+        public override string GetValueString()
+        {
+            return value.ToString();
         }
     }
 
@@ -177,13 +192,15 @@ namespace ScriptTree
     public class ParameterInfo
     {
         public string name;
+        public int index;
         public ParameterTypeInfo type;
 
-        public static ParameterInfo Build(string name, ParameterTypeInfo type)
+        public static ParameterInfo Build(string name, int index, ParameterTypeInfo type)
         {
             return new ParameterInfo()
             {
                 name = name,
+                index = index,
                 type = type,
             };
         }
@@ -192,6 +209,7 @@ namespace ScriptTree
     public class ParameterTypeInfo
     {
         public string name;
+        public bool canBeLiteral;
         public Func<object> getDefaultValue;
     }
 
@@ -241,10 +259,10 @@ namespace ScriptTree
             hasInit = true;
             ParameterTypeInfoes.tvoid = RegisterParameterType("void", () => null);
             ParameterTypeInfoes.tany = RegisterParameterType("any", () => null);
-            ParameterTypeInfoes.tint = RegisterParameterType("int", () => 0);
-            ParameterTypeInfoes.tfloat = RegisterParameterType("float", () => 0f);
-            ParameterTypeInfoes.tstring = RegisterParameterType("string", () => string.Empty);
-            ParameterTypeInfoes.tbool = RegisterParameterType("bool", () => false);
+            ParameterTypeInfoes.tint = RegisterParameterType("int", () => 0, true);
+            ParameterTypeInfoes.tfloat = RegisterParameterType("float", () => 0f, true);
+            ParameterTypeInfoes.tstring = RegisterParameterType("string", () => string.Empty, true);
+            ParameterTypeInfoes.tbool = RegisterParameterType("bool", () => false, true);
             ParameterTypeInfoes.tVector3 = RegisterParameterType("Vector3", () => Vector3.zero);
 
             RegisterFunction("void SetValue key:string value:any", (state, state2) =>
@@ -291,6 +309,23 @@ namespace ScriptTree
                 Debug.Log($"实体id={id}想要传送到位置={position}");
                 return null;
             });
+
+            RegisterFunction("string StringLiteral value:string", (state, state2) =>
+            {
+                return state.CheckOutParameter<string>(0);
+            });
+            RegisterFunction("string IntLiteral value:int", (state, state2) =>
+            {
+                return state.CheckOutParameter<int>(0);
+            });
+            RegisterFunction("string FloatLiteral value:float", (state, state2) =>
+            {
+                return state.CheckOutParameter<float>(0);
+            });
+            RegisterFunction("string BoolLiteral value:bool", (state, state2) =>
+            {
+                return state.CheckOutParameter<bool>(0);
+            });
         }
 
         public static ScriptTreeFuncBase RegisterFunction(string name, string returnType, List<ParameterInfo> infoes, Func<ScriptTreeState, ScriptTreeFuncBase, object> executeMethod)
@@ -317,16 +352,17 @@ namespace ScriptTree
                 var paramInfo = splits[i].Split(':');
                 var paramName = paramInfo[0];
                 var paramType = paramInfo.Length > 1 ? paramInfo[1] : "any";
-                infoes.Add(ParameterInfo.Build(paramName, GetParameterType(paramType)));
+                infoes.Add(ParameterInfo.Build(paramName, i - 2, GetParameterType(paramType)));
             }
 
             return RegisterFunction(name, returnType, infoes, executeMethod);
         }
 
-        public static ParameterTypeInfo RegisterParameterType(string name, Func<object> defValue)
+        public static ParameterTypeInfo RegisterParameterType(string name, Func<object> defValue, bool canBeLiteral = false)
         {
             ParameterTypeInfo info = new ParameterTypeInfo();
             info.name = name;
+            info.canBeLiteral = canBeLiteral;
             info.getDefaultValue = defValue;
             m_name2type[name] = info;
             return info;

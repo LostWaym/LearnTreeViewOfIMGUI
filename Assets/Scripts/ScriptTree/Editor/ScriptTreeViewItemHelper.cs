@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEditor;
@@ -35,80 +36,99 @@ namespace ScriptTree
         }
     }
 
-    public class IfStatScriptItemView : ScriptItemView
+    public class CallFuncItemView : ScriptItemView
     {
-        public IfStatNode node;
+        public CallFuncStatNode m_node;
 
-        public ScriptItemView caseInserter;
-        public ScriptItemView def;
-
-
-        public void Load(IfStatNode node)
+        public CallFuncItemView(CallFuncStatNode stat)
         {
-            children.Clear();
-            var root = this;
-            root.display = "#if";
+            m_node = stat;
+            onClick = OnClick;
 
-            def = Helper.NewScriptItemView("default");
-            caseInserter = Helper.BuildInserter(BuildCase, "$newCase");
-            caseInserter.hint = "新建条件分支";
-
-            def.AddChild(Helper.BuildActionInserter());
-
-            root.AddChild(caseInserter);
-            root.AddChild(def);
-
-            def.canRemove = false;
-            def.canRename = false;
-            caseInserter.canRemove = false;
-            caseInserter.canRename = false;
-
-
-        }
-
-        private ScriptItemView BuildCase()
-        {
-            var item = Helper.NewScriptItemView<IfCaseDataItemView>("case");
-            item.canRemove = true;
-            item.canRename = false;
-            OnCaseCreate(item);
-            return item;
-        }
-
-        private void OnCaseCreate(ScriptItemView view)
-        {
-            IfCaseData data = new IfCaseData();
-            node.cases.Add(data);
-            view.onRemove = (v, tree) =>
+            display = $"@{stat.exp.funcName}()";
+            var func = ScriptTreeFunctionManager.GetFunction(stat.exp.funcName);
+            for (int i = 0; i < func.parameterInfoes.Count; i++)
             {
-                node.cases.Remove(data);
-            };
+                var index = i;
+                var param = func.parameterInfoes[i];
+                var subNode = Helper.NewScriptItemView<ParameterItemView>();
+                subNode.Init(param);
+                subNode.Load(stat.exp.parameters[i]);
+                subNode.onUseLiteral = (literal) =>
+                {
+                    stat.exp.parameters[index] = literal;
+                };
+                subNode.onUseCall = (call) =>
+                {
+                    stat.exp.parameters[index] = call;
+                };
+
+                AddChild(subNode);
+            }
         }
 
-        public void OnCaseRemoved(IfCaseData caseData)
+        private void OnClick(ScriptItemView view, ScriptTreeView tree)
         {
 
         }
     }
 
-    public class IfCaseDataItemView : ScriptItemView
+    public class ParameterItemView : ScriptItemView
     {
-        public IfCaseData caseData;
+        public BaseExpNode m_node;
+        public Action<LiteralExpNode> onUseLiteral;
+        public Action<CallFuncExpNode> onUseCall;
+        public ParameterInfo info;
 
-        public ScriptItemView condition;
-        public ScriptItemView stats;
+        public bool IsLiteral => m_node is LiteralExpNode;
 
-        public void Init()
+        public ParameterItemView()
         {
-            condition = Helper.BuildParameter("condition");
-            stats = Helper.NewScriptItemView("stats");
+            canRename = false;
+            canRemove = false;
 
-            stats.AddChild(Helper.BuildActionInserter("$..."));
+            onClick = (view, tree) =>
+            {
+                Helper.OpenSelectionForm((ret) =>
+                {
+                    var call = new CallFuncExpNode()
+                    {
+                        funcName = ret.name,
+                        id = m_node.id,
+                        parameters = new List<BaseExpNode>()
+                    };
+                    Load(call);
+                    onUseCall?.Invoke(call);
+                    tree.Reload();
+                }, info.type);
+            };
         }
 
-        public void Bind(IfCaseData data)
+        public void Init(ParameterInfo info)
         {
-            caseData = data;
+            this.info = info;
+            paramName = info.name;
+        }
+
+        public void Load(BaseExpNode node)
+        {
+            children.Clear();
+
+            m_node = node;
+            if (node is LiteralExpNode exp)
+            {
+                display = $"{paramName}: literal: {exp.GetValueString()}";
+            }
+            else if (node is CallFuncExpNode callFunc)
+            {
+                display = $"{paramName}: {callFunc.funcName}()";
+
+
+            }
+            else
+            {
+                display = $"{paramName}: null";
+            }
         }
     }
 

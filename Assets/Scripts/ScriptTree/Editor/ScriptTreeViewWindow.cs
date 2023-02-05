@@ -28,15 +28,21 @@ public class ScriptTreeViewWindow : EditorWindow
     {
         var rect = new Rect(Vector2.zero, position.size);
 
+        if (treeView.isDirty)
+        {
+            treeView.Reload();
+            treeView.SetDirty(false);
+        }
+
         treeView.OnGUI(SplitRect(rect, 350, 0));
         GUILayout.BeginArea(SplitRect(rect, 350, 1), "Inspector", GUI.skin.window);
         if (treeView.selectedView != null)
         {
-            if (!string.IsNullOrEmpty(treeView.selectedView.hint))
-            {
-                EditorGUILayout.LabelField(treeView.selectedView.hint);
-            }
-            treeView.selectedView.onInspector?.Invoke(treeView.selectedView, treeView);
+            //if (!string.IsNullOrEmpty(treeView.selectedView.hint))
+            //{
+            //    EditorGUILayout.LabelField(treeView.selectedView.hint);
+            //}
+            treeView.selectedView.onGUI?.Invoke(treeView);
         }
         GUILayout.EndArea();
     }
