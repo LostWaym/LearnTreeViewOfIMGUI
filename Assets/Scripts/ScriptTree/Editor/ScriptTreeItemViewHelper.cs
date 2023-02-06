@@ -81,6 +81,7 @@ public static class ScriptTreeItemViewHelper
     public static NodeItemView BuildIfStatNode(IfStatNode node)
     {
         var view = NewItemView;
+        view.type = "if";
         view.name = "if";
         view.displayName = view.name;
         view.canRename = false;
@@ -158,7 +159,7 @@ public static class ScriptTreeItemViewHelper
     }
 
     //双击切换表达式类型
-    public static NodeItemView BuildFunc(ScriptTreeFuncBase func)
+    public static NodeItemView BuildFunc(ScriptTreeFuncBase func, CallFuncExpNode exp)
     {
         var view = NewItemView;
         view.canRemove = true;
@@ -166,7 +167,7 @@ public static class ScriptTreeItemViewHelper
         view.type = "func";
         view.name = func.name;
         view.displayName = func.name;
-        FillParameter(view, func.parameterInfoes);
+        FillParameter(view, func.parameterInfoes, exp?.parameters);
 
         view.onClick = tree =>
         {
@@ -177,7 +178,7 @@ public static class ScriptTreeItemViewHelper
 
                 view.name = ret.name;
                 view.displayName = ret.name;
-                FillParameter(view, ret.parameterInfoes);
+                FillParameter(view, ret.parameterInfoes, null);
                 tree.SetDirty();
             });
         };
@@ -185,13 +186,28 @@ public static class ScriptTreeItemViewHelper
         return view;
     }
 
-    public static void FillParameter(NodeItemView view, List<ParameterInfo> infoes)
+    public static void FillParameter(NodeItemView view, List<ParameterInfo> infoes, List<BaseExpNode> exps)
     {
         view.children.Clear();
-        foreach (var item in infoes)
+
+        if (exps != null)
         {
-            var param = BuildParameter(null, item.name, item.type);
-            view.AddChild(param);
+            for (int i = 0; i < exps.Count; i++)
+            {
+                var param = exps[i];
+                var info = infoes[i];
+                var paramNode = BuildParameter(param, info.name, info.type);
+                view.AddChild(paramNode);
+            }
+        }
+        else
+        {
+            for (int i = 0; i < infoes.Count; i++)
+            {
+                var info = infoes[i];
+                var paramNode = BuildParameter(null, info.name, info.type);
+                view.AddChild(paramNode);
+            }
         }
     }
 
@@ -214,7 +230,7 @@ public static class ScriptTreeItemViewHelper
             if (node is CallFuncExpNode callFunc)
             {
                 var func = ScriptTreeFunctionManager.GetFunction(callFunc.funcName);
-                FillParameter(view, func.parameterInfoes);
+                FillParameter(view, func.parameterInfoes, callFunc.parameters);
                 data.literalValue = false;
                 data.funcName = callFunc.funcName;
                 view.displayName = $"{name}: {func.name}()";
@@ -260,7 +276,7 @@ public static class ScriptTreeItemViewHelper
                         if (ret == null)
                             return;
 
-                        FillParameter(view, ret.parameterInfoes);
+                        FillParameter(view, ret.parameterInfoes, null);
                         data.isLiteral = false;
                         data.literalValue = null;
                         data.funcName = ret.name;
@@ -348,7 +364,7 @@ public static class ScriptTreeItemViewHelper
                 }else if (item is CallFuncStatNode callFuncStat)
                 {
                     var func = ScriptTreeFunctionManager.GetFunction(callFuncStat.exp.funcName);
-                    var callFuncStatView = BuildFunc(func);
+                    var callFuncStatView = BuildFunc(func, callFuncStat.exp);
                     view.AddChild(callFuncStatView);
                 }else if (item is ReturnStatNode returnStat)
                 {
@@ -386,7 +402,7 @@ public static class ScriptTreeItemViewHelper
                             }
 
                             var insertIndex = view.IndexOfChild(inserterView);
-                            var inserteeView = BuildFunc(func);
+                            var inserteeView = BuildFunc(func, null);
                             view.InsertChild(insertIndex, inserteeView);
                             tree.SetDirty();
                         });
@@ -452,5 +468,105 @@ public static class ScriptTreeItemViewHelper
         {
             callback?.Invoke(index, index == -1 ? null : list[index]);
         });
+    }
+
+    public static BlockStatNode BuildBlockNodeData(NodeItemView root)
+    {
+        BlockStatNode node = new BlockStatNode();
+        node.children = new List<BaseStatNode>();
+        foreach (var item in root.children)
+        {
+            if (item.type == "if")
+            {
+                IfStatNode ifStatNode = new IfStatNode();
+                ifStatNode.cases = new List<IfCaseData>();
+                foreach (var item2 in item.children)
+                {
+                    if (item2.name == "case")
+                    {
+                        IfCaseData ifCaseData = new IfCaseData();
+                        ifCaseData.block = BuildBlockNodeData(item2.GetChild("stats"));
+                        ifCaseData.condition = BuildParameterNodeData(item2.GetChild("condition"));
+                        
+                        ifStatNode.cases.Add(ifCaseData);
+                    }
+                }
+
+                ifStatNode.defaultBlock = BuildBlockNodeData(item.GetChild("default"));
+
+                node.children.Add(ifStatNode);
+            }
+            else if (item.type == "func")
+            {
+                CallFuncStatNode callFuncStatNode = new CallFuncStatNode();
+                CallFuncExpNode callFuncExpNode = new CallFuncExpNode();
+                callFuncStatNode.exp = callFuncExpNode;
+
+                callFuncExpNode.funcName = item.name;
+                callFuncExpNode.parameters = new List<BaseExpNode>();
+                foreach (var parameter in item.children)
+                {
+                    callFuncExpNode.parameters.Add(BuildParameterNodeData(parameter));
+                }
+
+                node.children.Add(callFuncStatNode);
+            }
+        }
+
+        return node;
+    }
+
+    public static BaseExpNode BuildParameterNodeData(NodeItemView root)
+    {
+        if (root.type != "parameter")
+        {
+            throw new Exception($"传入的类型不是parameter！");
+        }
+
+        ParameterData data = root.data as ParameterData;
+        BaseExpNode exp = null;
+        if (data.isLiteral)
+        {
+            object literalValue = data.literalValue == null ? data.paramInfo.getDefaultValue() : data.literalValue;
+            if (data.paramInfo == ParameterTypeInfoes.tint)
+            {
+                IntLiteralExpNode node = new IntLiteralExpNode();
+                node.value = (int)literalValue;
+                exp = node;
+            }
+            else if(data.paramInfo == ParameterTypeInfoes.tfloat)
+            {
+
+                FloatLiteralExpNode node = new FloatLiteralExpNode();
+                node.value = (float)literalValue;
+                exp = node;
+            }
+            else if(data.paramInfo == ParameterTypeInfoes.tstring)
+            {
+
+                StringLiteralExpNode node = new StringLiteralExpNode();
+                node.value = (string)literalValue;
+                exp = node;
+            }
+            else if(data.paramInfo == ParameterTypeInfoes.tbool)
+            {
+
+                BoolLiteralExpNode node = new BoolLiteralExpNode();
+                node.value = (bool)literalValue;
+                exp = node;
+            }
+        }
+        else
+        {
+            CallFuncExpNode call = new CallFuncExpNode();
+            call.funcName = data.funcName;
+            call.parameters = new List<BaseExpNode>();
+            foreach (var parameter in root.children)
+            {
+                call.parameters.Add(BuildParameterNodeData(parameter));
+            }
+            exp = call;
+        }
+        return exp;
     }
 }

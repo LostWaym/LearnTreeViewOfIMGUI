@@ -8,7 +8,7 @@ using UnityEngine;
 
 public class ScriptTreeView : TreeView
 {
-    private NodeItemView dataSourceRoot;
+    public NodeItemView dataSourceRoot;
     public bool isDirty = false;
     public void SetDirty(bool toggle = true)
     {
@@ -176,15 +176,6 @@ public class ScriptTreeView : TreeView
         {
             Reload();
         });
-    }
-
-    private ScriptItemView NewTestItem()
-    {
-        return new ScriptItemView()
-        {
-            id = ++counter,
-            display = counter.ToString(),
-        };
     }
 
     private void AddCertainMenuItem(GenericMenu menu, int id)

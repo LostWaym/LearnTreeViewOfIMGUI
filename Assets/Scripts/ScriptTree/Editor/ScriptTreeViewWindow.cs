@@ -10,6 +10,8 @@ public class ScriptTreeViewWindow : EditorWindow
     private TreeViewState state;
     private ScriptTreeView treeView;
 
+    private BlockStatNode node;
+
     [MenuItem("Test/ScriptTreeView/Real")]
     public static void OpenWindow()
     {
@@ -27,6 +29,11 @@ public class ScriptTreeViewWindow : EditorWindow
     private void OnGUI()
     {
         var rect = new Rect(Vector2.zero, position.size);
+        var toolbarRect = rect;
+        toolbarRect.height = 32;
+        var bottomRect = rect;
+        bottomRect.y = 32;
+        bottomRect.height -= 32;
 
         if (treeView.isDirty)
         {
@@ -34,8 +41,12 @@ public class ScriptTreeViewWindow : EditorWindow
             treeView.SetDirty(false);
         }
 
-        treeView.OnGUI(SplitRect(rect, 350, 0));
-        GUILayout.BeginArea(SplitRect(rect, 350, 1), "Inspector", GUI.skin.window);
+        EditorGUILayout.BeginVertical();
+        GUILayout.BeginArea(toolbarRect);
+        DrawToolBar();
+        GUILayout.EndArea();
+        treeView.OnGUI(SplitRect(bottomRect, 350, 0));
+        GUILayout.BeginArea(SplitRect(bottomRect, 350, 1), "Inspector", GUI.skin.window);
         if (treeView.selectedView != null)
         {
             //if (!string.IsNullOrEmpty(treeView.selectedView.hint))
@@ -45,6 +56,25 @@ public class ScriptTreeViewWindow : EditorWindow
             treeView.selectedView.onGUI?.Invoke(treeView);
         }
         GUILayout.EndArea();
+        EditorGUILayout.EndVertical();
+    }
+
+    private void DrawToolBar()
+    {
+        EditorGUILayout.BeginHorizontal();
+
+        if (GUILayout.Button("保存结构", GUILayout.ExpandWidth(false), GUILayout.ExpandHeight(true)))
+        {
+            node = ScriptTreeItemViewHelper.BuildBlockNodeData(treeView.dataSourceRoot);
+        }
+
+        if (GUILayout.Button("读取结构", GUILayout.ExpandWidth(false), GUILayout.ExpandHeight(true)))
+        {
+            treeView.dataSourceRoot = ScriptTreeItemViewHelper.BuildBlock(node);
+            treeView.SetDirty();
+        }
+
+        EditorGUILayout.EndHorizontal();
     }
 
     private Rect SplitRect(Rect rect, float splitWidth, int index)

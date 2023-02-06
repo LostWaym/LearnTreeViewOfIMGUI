@@ -100,7 +100,6 @@ namespace ScriptTree
 
     public abstract class LiteralExpNode : BaseExpNode
     {
-        public abstract string GetValueString();
     }
 
     public class StringLiteralExpNode : LiteralExpNode
@@ -109,11 +108,6 @@ namespace ScriptTree
         public override object Execute(ScriptTreeState state)
         {
             return value;
-        }
-
-        public override string GetValueString()
-        {
-            return $"\"{value}\"";
         }
     }
 
@@ -124,10 +118,22 @@ namespace ScriptTree
         {
             return value;
         }
+    }
 
-        public override string GetValueString()
+    public class FloatLiteralExpNode : LiteralExpNode
+    {
+        public float value;
+        public override object Execute(ScriptTreeState state)
         {
-            return value.ToString();
+            return value;
+        }
+    }
+    public class BoolLiteralExpNode : LiteralExpNode
+    {
+        public bool value;
+        public override object Execute(ScriptTreeState state)
+        {
+            return value;
         }
     }
 
