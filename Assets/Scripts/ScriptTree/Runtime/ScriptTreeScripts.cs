@@ -102,39 +102,28 @@ namespace ScriptTree
     {
     }
 
-    public class StringLiteralExpNode : LiteralExpNode
+    public abstract class LiteralExpNode<T> : LiteralExpNode
     {
-        public string value;
+        public T value;
         public override object Execute(ScriptTreeState state)
         {
             return value;
         }
     }
 
-    public class IntLiteralExpNode : LiteralExpNode
+    public class StringLiteralExpNode : LiteralExpNode<string>
     {
-        public int value;
-        public override object Execute(ScriptTreeState state)
-        {
-            return value;
-        }
     }
 
-    public class FloatLiteralExpNode : LiteralExpNode
+    public class IntLiteralExpNode : LiteralExpNode<int>
     {
-        public float value;
-        public override object Execute(ScriptTreeState state)
-        {
-            return value;
-        }
     }
-    public class BoolLiteralExpNode : LiteralExpNode
+
+    public class FloatLiteralExpNode : LiteralExpNode<float>
     {
-        public bool value;
-        public override object Execute(ScriptTreeState state)
-        {
-            return value;
-        }
+    }
+    public class BoolLiteralExpNode : LiteralExpNode<bool>
+    {
     }
 
     public class CallFuncExpNode : BaseExpNode
@@ -146,11 +135,42 @@ namespace ScriptTree
         {
             ScriptTreeFuncBase func = ScriptTreeFunctionManager.GetFunction(funcName);
             List<object> funcParameters = new List<object>();
-            parameters.ForEach(exp => funcParameters.Add(exp.Execute(state)));
+            for (int i = 0; i < parameters.Count; i++)
+            {
+                var exp = parameters[i];
+                var value = exp?.Execute(state) ?? func.parameterInfoes[i].type.getDefaultValue();
+                funcParameters.Add(value);
+            }
 
             ScriptTreeState newState = new ScriptTreeState();
             newState.parameters = funcParameters;
             return func.Execute(newState);
+        }
+    }
+
+    public abstract class ValueContainer
+    {
+        ParameterTypeInfo info;
+    }
+
+    public class ValueContainer<T> : ValueContainer
+    {
+        public T value;
+
+        public static implicit operator T(ValueContainer<T> self)
+        {
+            return self.value;
+        }
+    }
+
+    public static class ValueContainerHelper
+    {
+        public static ValueContainer<T> GetValueContainer<T>(T value)
+        {
+            var container = new ValueContainer<T>();
+            container.value = value;
+
+            return container;
         }
     }
 
@@ -162,6 +182,7 @@ namespace ScriptTree
     public class ScriptTreeFuncBase
     {
         public string name;
+        public string desc;
         public bool canCallSingle;
         public List<ParameterInfo> parameterInfoes = new List<ParameterInfo>();
         public ParameterTypeInfo returnType;
@@ -278,37 +299,49 @@ namespace ScriptTree
                 state.SetValue(state.CheckOutParameter<string>(0), state.CheckOutParameter(1));
                 return null;
             });
+            previousRegistee.desc = "设置临时变量";
 
             RegisterFunction("any GetValue key:string", false, (state, state2) =>
             {
                 return state.GetValue(state.CheckOutParameter<string>(0));
             });
+            previousRegistee.desc = "获取临时变量";
 
             RegisterFunction("bool Equal left:any right:any", false, (state, state2) =>
             {
                 return state.CheckOutParameter(0)?.Equals(state.CheckOutParameter(1));
             });
+            previousRegistee.desc = "判断两个值是否相等";
 
             RegisterFunction("void Debug content:any", true, (state, state2) =>
             {
                 Debug.Log(state.CheckOutParameter(0));
                 return null;
             });
+            previousRegistee.desc = "打印一条调试信息";
 
             RegisterFunction("void Heal entityId:int healAmount:float", true, (state, state2) =>
             {
                 return null;
             });
+            previousRegistee.desc = "治疗实体";
 
             RegisterFunction("int IAdd left:int right:int", false, (state, state2) =>
             {
                 return null;
             });
+            previousRegistee.desc = "整数相加";
+            RegisterFunction("float FAdd left:float right:float", false, (state, state2) =>
+            {
+                return null;
+            });
+            previousRegistee.desc = "浮点数相加";
 
             RegisterFunction("Vector3 NewVector3 x:float y:float z:float", false, (state, state2) =>
             {
                 return new Vector3(state.CheckOutParameter<float>(0), state.CheckOutParameter<float>(1), state.CheckOutParameter<float>(2));
             });
+            previousRegistee.desc = "新建三维向量";
 
             RegisterFunction("void Teleport entityId:int position:Vector3", true, (state, state2) =>
             {
@@ -317,25 +350,31 @@ namespace ScriptTree
                 Debug.Log($"实体id={id}想要传送到位置={position}");
                 return null;
             });
+            previousRegistee.desc = "传送实体";
 
             RegisterFunction("string StringLiteral value:string", false, (state, state2) =>
             {
                 return state.CheckOutParameter<string>(0);
             });
+            previousRegistee.desc = "字符串字面量";
             RegisterFunction("int IntLiteral value:int", false, (state, state2) =>
             {
                 return state.CheckOutParameter<int>(0);
             });
+            previousRegistee.desc = "整数字面量";
             RegisterFunction("float FloatLiteral value:float", false, (state, state2) =>
             {
                 return state.CheckOutParameter<float>(0);
             });
+            previousRegistee.desc = "浮点数字面量";
             RegisterFunction("bool BoolLiteral value:bool", false, (state, state2) =>
             {
                 return state.CheckOutParameter<bool>(0);
             });
+            previousRegistee.desc = "布尔值字面量";
         }
 
+        private static ScriptTreeFuncBase previousRegistee;
         public static ScriptTreeFuncBase RegisterFunction(string name, string returnType, bool canCallSingle, List<ParameterInfo> infoes, Func<ScriptTreeState, ScriptTreeFuncBase, object> executeMethod)
         {
             HardCodeScriptTreeFunc func = new HardCodeScriptTreeFunc();
@@ -351,6 +390,7 @@ namespace ScriptTree
                 m_allReturnList.Add(func);
             }
             InsertFuncToType2Funcs(func);
+            previousRegistee = func;
             return func;
         }
 

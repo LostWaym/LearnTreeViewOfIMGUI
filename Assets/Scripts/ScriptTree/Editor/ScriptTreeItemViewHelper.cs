@@ -7,6 +7,7 @@ using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEditor;
+using UnityEngine;
 
 public class NodeItemView
 {
@@ -83,7 +84,7 @@ public static class ScriptTreeItemViewHelper
         var view = NewItemView;
         view.type = "if";
         view.name = "if";
-        view.displayName = view.name;
+        view.displayName = "#如果";
         view.canRename = false;
         view.canRemove = true;
 
@@ -91,21 +92,7 @@ public static class ScriptTreeItemViewHelper
         {
             foreach (var ifcase in node.cases)
             {
-                var caseView = NewItemView;
-                caseView.name = "case";
-                caseView.displayName = caseView.name;
-                caseView.canRename = false;
-                caseView.canRemove = true;
-
-                var conditionView = BuildParameter(ifcase.condition, "condition", ParameterTypeInfoes.tbool);
-
-                var blockView = BuildBlock(ifcase.block);
-                blockView.name = "stats";
-                blockView.displayName = blockView.name;
-
-                caseView.AddChild(conditionView);
-                caseView.AddChild(blockView);
-
+                var caseView = BuildIfCase(ifcase);
                 view.AddChild(caseView);
             }
         }
@@ -113,7 +100,7 @@ public static class ScriptTreeItemViewHelper
         {
             var inserterView = NewItemView;
             inserterView.name = "...newCase";
-            inserterView.displayName = inserterView.name;
+            inserterView.displayName = "...新建条件分支";
             inserterView.type = "inserter";
 
             inserterView.onClick = tree =>
@@ -130,7 +117,7 @@ public static class ScriptTreeItemViewHelper
         {
             var blockView = BuildBlock(node?.defaultBlock);
             blockView.name = "default";
-            blockView.displayName = blockView.name;
+            blockView.displayName = "否则执行";
 
             view.AddChild(blockView);
         }
@@ -141,16 +128,17 @@ public static class ScriptTreeItemViewHelper
     public static NodeItemView BuildIfCase(IfCaseData ifcase)
     {
         var view = NewItemView;
+        view.type = "case";
         view.name = "case";
-        view.displayName = view.name;
+        view.displayName = "分支";
         view.canRename = false;
         view.canRemove = true;
 
-        var conditionView = BuildParameter(ifcase?.condition, "condition", ParameterTypeInfoes.tbool);
+        var conditionView = BuildParameter(ifcase?.condition, "condition", ParameterTypeInfoes.tbool, "条件");
 
         var blockView = BuildBlock(ifcase?.block);
         blockView.name = "stats";
-        blockView.displayName = blockView.name;
+        blockView.displayName = "执行内容";
 
         view.AddChild(conditionView);
         view.AddChild(blockView);
@@ -165,8 +153,8 @@ public static class ScriptTreeItemViewHelper
         view.canRemove = true;
         view.canRename = false;
         view.type = "func";
-        view.name = func.name;
-        view.displayName = func.name;
+        view.name = func.name; 
+        view.displayName = $"#调用 {func.name}()";
         FillParameter(view, func.parameterInfoes, exp?.parameters);
 
         view.onClick = tree =>
@@ -177,7 +165,7 @@ public static class ScriptTreeItemViewHelper
                     return;
 
                 view.name = ret.name;
-                view.displayName = ret.name;
+                view.displayName = $"#调用 {ret.name}()";
                 FillParameter(view, ret.parameterInfoes, null);
                 tree.SetDirty();
             });
@@ -212,8 +200,9 @@ public static class ScriptTreeItemViewHelper
     }
 
     //双击切换表达式或字面量类型
-    public static NodeItemView BuildParameter(BaseExpNode node, string name, ParameterTypeInfo typeInfo)
+    public static NodeItemView BuildParameter(BaseExpNode node, string name, ParameterTypeInfo typeInfo, string localName = null)
     {
+        localName = localName ?? name;
         ParameterData data = new ParameterData();
         var view = NewItemView;
         view.canRemove = false;
@@ -233,11 +222,11 @@ public static class ScriptTreeItemViewHelper
                 FillParameter(view, func.parameterInfoes, callFunc.parameters);
                 data.literalValue = false;
                 data.funcName = callFunc.funcName;
-                view.displayName = $"{name}: {func.name}()";
+                view.displayName = $"{localName}: {func.name}()";
             }
             else if (node is LiteralExpNode literalExpNode)
             {
-                view.displayName = $"{name}: literal: {literalExpNode.Execute(null)}";
+                view.displayName = $"{localName}: literal: {literalExpNode.Execute(null)}";
                 data.isLiteral = true;
                 data.literalValue = literalExpNode.Execute(null);
             }
@@ -248,12 +237,12 @@ public static class ScriptTreeItemViewHelper
             if (data.paramInfo.canBeLiteral)
             {
                 data.literalValue = data.paramInfo.getDefaultValue();
-                view.displayName = $"{name}: literal: {data.literalValue}";
+                view.displayName = $"{localName}: literal: {data.literalValue}";
             }
             else
             {
                 data.literalValue = null;
-                view.displayName = $"{name}: null";
+                view.displayName = $"{localName}: null";
             }
         }
 
@@ -265,7 +254,7 @@ public static class ScriptTreeItemViewHelper
                 {
                     data.isLiteral = true;
                     data.literalValue = data.paramInfo.getDefaultValue();
-                    view.displayName = $"{name}: literal: {data.literalValue}";
+                    view.displayName = $"{localName}: literal: {data.literalValue}";
                     view.children.Clear();
                     tree.SetDirty();
                 }
@@ -280,7 +269,7 @@ public static class ScriptTreeItemViewHelper
                         data.isLiteral = false;
                         data.literalValue = null;
                         data.funcName = ret.name;
-                        view.displayName = $"{name}: {ret.name}()";
+                        view.displayName = $"{localName}: {ret.name}()";
                         tree.SetDirty();
                     }, typeInfo);
                 }
@@ -299,7 +288,7 @@ public static class ScriptTreeItemViewHelper
                     if (EditorGUI.EndChangeCheck())
                     {
                         data.literalValue = value;
-                        view.displayName = $"{name}: literal: {data.literalValue}";
+                        view.displayName = $"{localName}: literal: {data.literalValue}";
                         tree.SetDirty();
                     }
                 }
@@ -311,7 +300,7 @@ public static class ScriptTreeItemViewHelper
                     if (EditorGUI.EndChangeCheck())
                     {
                         data.literalValue = value;
-                        view.displayName = $"{name}: literal: {data.literalValue}";
+                        view.displayName = $"{localName}: literal: {data.literalValue}";
                         tree.SetDirty();
                     }
                 }
@@ -323,7 +312,7 @@ public static class ScriptTreeItemViewHelper
                     if (EditorGUI.EndChangeCheck())
                     {
                         data.literalValue = value;
-                        view.displayName = $"{name}: literal: {data.literalValue}";
+                        view.displayName = $"{localName}: literal: {data.literalValue}";
                         tree.SetDirty();
                     }
                 }
@@ -335,7 +324,7 @@ public static class ScriptTreeItemViewHelper
                     if (EditorGUI.EndChangeCheck())
                     {
                         data.literalValue = value;
-                        view.displayName = $"{name}: literal: {data.literalValue}";
+                        view.displayName = $"{localName}: literal: {data.literalValue}";
                         tree.SetDirty();
                     }
                 }
@@ -378,7 +367,7 @@ public static class ScriptTreeItemViewHelper
         {
             var inserterView = NewItemView;
             inserterView.name = "...new";
-            inserterView.displayName = inserterView.name;
+            inserterView.displayName = "...新动作";
             inserterView.type = "inserter";
 
             inserterView.onClick = tree =>
