@@ -11,6 +11,7 @@ public class ScriptTreeViewWindow : EditorWindow
     private ScriptTreeView treeView;
 
     private BlockStatNode node;
+    private string json = "[]";
 
     [MenuItem("Test/ScriptTreeView/Real")]
     public static void OpenWindow()
@@ -66,6 +67,14 @@ public class ScriptTreeViewWindow : EditorWindow
         if (GUILayout.Button("保存结构", GUILayout.ExpandWidth(false), GUILayout.ExpandHeight(true)))
         {
             node = ScriptTreeItemViewHelper.BuildBlockNodeData(treeView.dataSourceRoot);
+
+            var json = ScriptTreeSerializer.ToJson(node);
+            Debug.Log(json);
+            var block = ScriptTreeSerializer.ToBlock(json);
+            var json2 = ScriptTreeSerializer.ToJson(block);
+            Debug.Log(json2);
+            Debug.Log($"verified: {json == json2}");
+            this.json = json;
         }
 
         if (GUILayout.Button("读取结构", GUILayout.ExpandWidth(false), GUILayout.ExpandHeight(true)))
@@ -73,6 +82,21 @@ public class ScriptTreeViewWindow : EditorWindow
             treeView.dataSourceRoot = ScriptTreeItemViewHelper.BuildBlock(node);
             treeView.SetDirty();
         }
+
+
+
+        if (GUILayout.Button("保存并输出结构(json)", GUILayout.ExpandWidth(false), GUILayout.ExpandHeight(true)))
+        {
+            var node = ScriptTreeItemViewHelper.BuildBlockNodeData(treeView.dataSourceRoot);
+            json = ScriptTreeSerializer.ToJson(node);
+            Debug.Log(json);
+        }
+        if (GUILayout.Button("读取结构(json)", GUILayout.ExpandWidth(false), GUILayout.ExpandHeight(true)))
+        {
+            treeView.dataSourceRoot = ScriptTreeItemViewHelper.BuildBlock(ScriptTreeSerializer.ToBlock(json));
+            treeView.SetDirty();
+        }
+
 
         EditorGUILayout.EndHorizontal();
     }
