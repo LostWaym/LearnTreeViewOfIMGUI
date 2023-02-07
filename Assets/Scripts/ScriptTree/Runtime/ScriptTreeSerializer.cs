@@ -121,6 +121,10 @@ public static class ScriptTreeSerializer
                 parameters.Add(BuildParameterObject(item));
             }
         }
+        else if (exp == null)
+        {
+            type = "null";
+        }
         root.AddField("type", type);
 
         return root;
@@ -217,6 +221,10 @@ public static class ScriptTreeSerializer
         else if (type == "CallFunction")
         {
             ret = BuildCallFuncExpNode(root);
+        }
+        else if (type == "null")
+        {
+            return null;
         }
         else
         {
