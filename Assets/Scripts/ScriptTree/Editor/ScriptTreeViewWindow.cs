@@ -128,6 +128,12 @@ public class ScriptTreeViewWindow : EditorWindow
                 treeView.SetDirty();
             });
         }
+        GUILayout.FlexibleSpace();
+        if (GUILayout.Button("尝试执行", GUILayout.ExpandWidth(false), GUILayout.ExpandHeight(true)))
+        {
+            var node = ScriptTreeItemViewHelper.BuildBlockNodeData(treeView.dataSourceRoot);
+            ScriptTreeInterpreter.ExecuteStat(node);
+        }
 
 
         EditorGUILayout.EndHorizontal();

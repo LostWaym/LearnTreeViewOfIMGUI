@@ -15,6 +15,7 @@ namespace ScriptTree
         public List<object> parameters;
 
         public Dictionary<string, object> data = new Dictionary<string, object>();
+        public ScriptTreeState parent; 
 
         public void Clear()
         {
@@ -28,7 +29,10 @@ namespace ScriptTree
 
         public object GetValue(string key)
         {
-            data.TryGetValue(key, out object value);
+            if (!data.TryGetValue(key, out object value) && parent != null)
+            {
+                return parent.GetValue(key);
+            }
             return value;
         }
 
@@ -143,6 +147,7 @@ namespace ScriptTree
             }
 
             ScriptTreeState newState = new ScriptTreeState();
+            newState.parent = state;
             newState.parameters = funcParameters;
             return func.Execute(newState);
         }
@@ -296,14 +301,14 @@ namespace ScriptTree
 
             RegisterFunction("void SetValue key:string value:any", true, (state, state2) =>
             {
-                state.SetValue(state.CheckOutParameter<string>(0), state.CheckOutParameter(1));
+                state.parent?.SetValue(state.CheckOutParameter<string>(0), state.CheckOutParameter(1));
                 return null;
             });
             previousRegistee.desc = "设置临时变量";
 
             RegisterFunction("any GetValue key:string", false, (state, state2) =>
             {
-                return state.GetValue(state.CheckOutParameter<string>(0));
+                return state.parent?.GetValue(state.CheckOutParameter<string>(0));
             });
             previousRegistee.desc = "获取临时变量";
 
