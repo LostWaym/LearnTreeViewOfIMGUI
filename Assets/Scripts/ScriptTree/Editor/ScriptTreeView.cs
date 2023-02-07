@@ -174,6 +174,7 @@ public class ScriptTreeView : TreeView
         });
         menu.AddItem(new GUIContent("添加"), false, () =>
         {
+
             Reload();
         });
     }
@@ -202,6 +203,7 @@ public class ScriptTreeView : TreeView
     protected override bool CanRename(TreeViewItem item)
     {
         var sitem = GetScriptItem(item.id);
+        //如果在返回true的时候修改displayName，即可有指定更名时候和原来名字显示不一样的功能
         return sitem == null ? false : sitem.canRename;
     }
 

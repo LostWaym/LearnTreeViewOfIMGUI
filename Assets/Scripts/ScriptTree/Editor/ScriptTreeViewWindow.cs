@@ -13,10 +13,13 @@ public class ScriptTreeViewWindow : EditorWindow
     private BlockStatNode node;
     private string json = "[]";
 
+    private float inspectorWidth = 350;
+
     [MenuItem("Test/ScriptTreeView/Real")]
     public static void OpenWindow()
     {
-        GetWindow<ScriptTreeViewWindow>();
+        var window = GetWindow<ScriptTreeViewWindow>();
+        window.minSize = new Vector2(256, 256);
     }
 
     private void OnEnable()
@@ -46,8 +49,16 @@ public class ScriptTreeViewWindow : EditorWindow
         GUILayout.BeginArea(toolbarRect);
         DrawToolBar();
         GUILayout.EndArea();
-        treeView.OnGUI(SplitRect(bottomRect, 350, 0));
-        GUILayout.BeginArea(SplitRect(bottomRect, 350, 1), "Inspector", GUI.skin.window);
+        treeView.OnGUI(SplitRect(bottomRect, inspectorWidth, 0));
+
+        EditorGUIUtility.AddCursorRect(new Rect(position.width - inspectorWidth - 4, 8, 32, position.height - 32), MouseCursor.ResizeHorizontal);
+        if (Event.current.type == EventType.MouseDrag)
+        {
+            inspectorWidth -= Event.current.delta.x;
+            inspectorWidth = Mathf.Clamp(inspectorWidth, 50, position.width - 50);
+            Event.current.Use();
+        }
+        GUILayout.BeginArea(SplitRect(bottomRect, inspectorWidth, 1), "Inspector", GUI.skin.window);
         if (treeView.selectedView != null)
         {
             //if (!string.IsNullOrEmpty(treeView.selectedView.hint))
@@ -95,6 +106,27 @@ public class ScriptTreeViewWindow : EditorWindow
         {
             treeView.dataSourceRoot = ScriptTreeItemViewHelper.BuildBlock(ScriptTreeSerializer.ToBlock(json));
             treeView.SetDirty();
+        }
+        if (GUILayout.Button("读取结构(json、form)", GUILayout.ExpandWidth(false), GUILayout.ExpandHeight(true)))
+        {
+            InputContentFormWindow.OpenWindow("请输入json", (content) =>
+            {
+                if (string.IsNullOrEmpty(content))
+                {
+                    return;
+                }
+
+                JSONObject obj = new JSONObject(content);
+                if (!obj.IsArray)
+                {
+                    Debug.LogError("无效json！");
+                    return;
+                }
+
+                var node = ScriptTreeSerializer.BuildBlock(obj);
+                treeView.dataSourceRoot = ScriptTreeItemViewHelper.BuildBlock(node);
+                treeView.SetDirty();
+            });
         }
 
 
