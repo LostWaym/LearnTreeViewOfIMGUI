@@ -47,6 +47,7 @@ public class ScriptTreeViewWindow : EditorWindow
         treeView.Reload();
     }
 
+    private bool dragging = false;
     private void OnGUI()
     {
         var rect = new Rect(Vector2.zero, position.size);
@@ -68,8 +69,20 @@ public class ScriptTreeViewWindow : EditorWindow
         GUILayout.EndArea();
         treeView.OnGUI(SplitRect(bottomRect, inspectorWidth, 0));
 
-        EditorGUIUtility.AddCursorRect(new Rect(position.width - inspectorWidth - 4, 8, 32, position.height - 32), MouseCursor.ResizeHorizontal);
-        if (Event.current.type == EventType.MouseDrag)
+        var resizeRect = new Rect(position.width - inspectorWidth - 4, 8, 32, position.height - 32);
+        EditorGUIUtility.AddCursorRect(resizeRect, MouseCursor.ResizeHorizontal);
+        if (Event.current.type == EventType.MouseDown)
+        {
+            if (resizeRect.Contains(Event.current.mousePosition))
+            {
+                dragging = true;
+            }
+        }
+        else if (Event.current.type == EventType.MouseUp)
+        {
+            dragging = false;
+        }
+        else if (dragging && Event.current.type == EventType.MouseDrag)
         {
             inspectorWidth -= Event.current.delta.x;
             inspectorWidth = Mathf.Clamp(inspectorWidth, 50, position.width - 50);
