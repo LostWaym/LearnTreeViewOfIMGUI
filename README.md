@@ -44,3 +44,7 @@ json库用的是JSONObject，但有些bug，字符串无法带引号，以及浮
 加了个没啥卵用的辅助调试打印。做了点兼容，以及杂七乱八的。
 
 估计很快就能用了。。。。吧…
+
+计划支持在any中直接支持Literal，而不是包一层Function。
+
+计划支持将GetValue作为内置的ExpNode，返回类型为any，但同时保留GetValue(Function)
