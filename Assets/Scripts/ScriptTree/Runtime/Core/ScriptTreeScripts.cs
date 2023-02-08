@@ -535,7 +535,7 @@ namespace ScriptTree
             return state;
         }
 
-        public static void ExecuteStat(BlockStatNode block, ScriptTreeState state)
+        public static void ExecuteStat(BlockStatNode block, ScriptTreeState state, bool isInline = true)
         {
             ScriptTreeFunctionManager.InitDefaultTypeAndFunc();
             var rootContainer = block.children;
@@ -586,7 +586,10 @@ namespace ScriptTree
                 }
             }
 
-            state.completed = true;
+            if (!isInline)
+            {
+                state.completed = true;
+            }
         }
     }
 }
