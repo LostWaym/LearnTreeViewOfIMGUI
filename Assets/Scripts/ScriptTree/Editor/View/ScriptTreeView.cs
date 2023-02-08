@@ -200,6 +200,48 @@ public class ScriptTreeView : TreeView
         menu.AddItem(new GUIContent("粘贴"), false, () => { });
     }
 
+    protected override bool CanStartDrag(CanStartDragArgs args)
+    {
+        var item = GetScriptItem(args.draggedItem.id);
+        if (item == null)
+            return false;
+        
+        return new List<string>() { "if", "func" }.Contains(item.type);
+    }
+
+    protected override void SetupDragAndDrop(SetupDragAndDropArgs args)
+    {
+        DragAndDrop.PrepareStartDrag();
+        DragAndDrop.StartDrag("xxx");
+    }
+
+    protected override DragAndDropVisualMode HandleDragAndDrop(DragAndDropArgs args)
+    {
+        switch (args.dragAndDropPosition)
+        {
+            case DragAndDropPosition.UponItem://当指针挪到item上（不是上面）的时候
+                if (args.performDrop)
+                {
+                }
+                break;
+            case DragAndDropPosition.BetweenItems://当指针挪到item边缘的时候，如果是在rootItems下的话，那我们就理解了为什么需要rootItem了。
+                if (args.performDrop)
+                {
+                }
+                break;
+            case DragAndDropPosition.OutsideItems://挪到一个没有item的地方
+                if (args.performDrop)
+                {
+                }
+                break;
+            default:
+                break;
+        }
+
+
+        return DragAndDropVisualMode.Move;
+    }
+
     protected override bool CanRename(TreeViewItem item)
     {
         var sitem = GetScriptItem(item.id);
