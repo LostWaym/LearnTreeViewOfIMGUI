@@ -14,7 +14,11 @@ public class AnonymousScriptTreeEditor : Editor
         {
             ScriptTreeViewWindow.OpenWindow(
                 ()=>tree.json,
-                (str)=>tree.json = str
+                (str)=>
+                {
+                    tree.json = str;
+                    EditorUtility.SetDirty(tree);
+                }
             );
         }
         if (GUILayout.Button("输出json"))

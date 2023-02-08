@@ -371,16 +371,42 @@ namespace ScriptTree
             });
             previousRegistee.desc = "治疗实体";
 
+            RegisterFunction("bool And left:bool right:bool", false, (state, state2) =>
+            {
+                return state.CheckOutParameter<bool>(0) && state.CheckOutParameter<bool>(1);
+            });
+            previousRegistee.desc = "逻辑且";
+
+            RegisterFunction("bool Or left:bool right:bool", false, (state, state2) =>
+            {
+                return state.CheckOutParameter<bool>(0) || state.CheckOutParameter<bool>(1);
+            });
+            previousRegistee.desc = "逻辑或";
+
             RegisterFunction("int IAdd left:int right:int", false, (state, state2) =>
             {
-                return null;
+                return state.CheckOutParameter<int>(0) + state.CheckOutParameter<int>(1);
             });
             previousRegistee.desc = "整数相加";
+
             RegisterFunction("float FAdd left:float right:float", false, (state, state2) =>
             {
-                return null;
+                return state.CheckOutParameter<float>(0) + state.CheckOutParameter<float>(1);
             });
             previousRegistee.desc = "浮点数相加";
+
+            RegisterFunction("float Int2Float value:int", false, (state, state2) =>
+            {
+                return (float)state.CheckOutParameter<int>(0);
+            });
+            previousRegistee.desc = "整数转浮点数";
+
+            RegisterFunction("int Float2Int value:float", false, (state, state2) =>
+            {
+                return (int)state.CheckOutParameter<float>(0);
+            });
+            previousRegistee.desc = "浮点数转整数";
+
 
             RegisterFunction("Vector3 NewVector3 x:float y:float z:float", false, (state, state2) =>
             {
@@ -526,26 +552,30 @@ namespace ScriptTree
                 }
                 else if (root is IfStatNode ifStatNode)
                 {
+                    bool executed = false;
                     for (int i = 0; i < ifStatNode.cases.Count; i++)
                     {
                         var @case = ifStatNode.cases[i];
                         var condition = @case.condition;
                         var trueblock = @case.block;
-                        if ((bool)condition.Execute(state))
+                        var value = condition.Execute(state);
+                        if (value is bool b && b)
                         {
+                            executed = true;
                             ExecuteStat(trueblock, state);
                             if (state.completed)
                             {
                                 return;
                             }
                         }
-                        else if (ifStatNode.defaultBlock != null)
+                    }
+
+                    if (!executed && ifStatNode.defaultBlock != null)
+                    {
+                        ExecuteStat(ifStatNode.defaultBlock, state);
+                        if (state.completed)
                         {
-                            ExecuteStat(ifStatNode.defaultBlock, state);
-                            if (state.completed)
-                            {
-                                return;
-                            }
+                            return;
                         }
                     }
                 }
