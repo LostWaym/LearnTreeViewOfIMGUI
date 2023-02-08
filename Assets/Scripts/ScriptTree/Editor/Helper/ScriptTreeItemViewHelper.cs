@@ -55,6 +55,24 @@ public class NodeItemView
         parent = null;
     }
 
+    public bool IsAncestorOf(NodeItemView view)
+    {
+        if (view == this || view == null)
+            return false;
+
+        var parent = view.parent;
+        while(parent != null)
+        {
+            if (parent == this)
+            {
+                return true;
+            }
+            parent = parent.parent;
+        }
+
+        return false;
+    }
+
     public int IndexOfChild(NodeItemView view)
     {
         return children.IndexOf(view);

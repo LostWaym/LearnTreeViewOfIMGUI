@@ -42,6 +42,7 @@ public class ScriptTreeView : TreeView
         List<TreeViewItem> list = new List<TreeViewItem>();
         if (dataSourceRoot != null)
         {
+            root.id = dataSourceRoot.id;
             if (dataSourceRoot.children.Count > 0)
             {
                 AddChildRescursive(0, dataSourceRoot.children, list);
@@ -146,12 +147,11 @@ public class ScriptTreeView : TreeView
         {
             return null;
         }
+        if (root.id == id)
+            return root;
 
         foreach (var item in root.children)
         {
-            if (item.id == id)
-                return item;
-
             var ret = GetScriptItem(id, item); ;
             if (ret != null)
                 return ret;
@@ -211,22 +211,48 @@ public class ScriptTreeView : TreeView
 
     protected override void SetupDragAndDrop(SetupDragAndDropArgs args)
     {
+        if (args.draggedItemIDs == null || args.draggedItemIDs.Count == 0)
+            return;
+
         DragAndDrop.PrepareStartDrag();
-        DragAndDrop.StartDrag("xxx");
+        DragAndDrop.SetGenericData("move", args.draggedItemIDs[0]);
+        DragAndDrop.StartDrag("move");
     }
 
     protected override DragAndDropVisualMode HandleDragAndDrop(DragAndDropArgs args)
     {
+        DragAndDropVisualMode mode = DragAndDropVisualMode.None;
+        TreeViewItem dragged = FindItem((int)DragAndDrop.GetGenericData("move"), rootItem);
+        if (dragged == null)
+            return DragAndDropVisualMode.None;
+
+        args.parentItem = args.parentItem ?? rootItem;
+
         switch (args.dragAndDropPosition)
         {
             case DragAndDropPosition.UponItem://当指针挪到item上（不是上面）的时候
-                if (args.performDrop)
-                {
-                }
-                break;
             case DragAndDropPosition.BetweenItems://当指针挪到item边缘的时候，如果是在rootItems下的话，那我们就理解了为什么需要rootItem了。
-                if (args.performDrop)
+                if (ValidateDrag(dragged, args.parentItem))
                 {
+                    mode = DragAndDropVisualMode.Move; 
+                    if (args.performDrop)
+                    {
+                        var parentItem = GetScriptItem(args.parentItem.id);
+                        var draggedItem = GetScriptItem(dragged.id);
+                        int indexInParent = parentItem.IndexOfChild(draggedItem);
+                        if (indexInParent != -1 &&  indexInParent < args.insertAtIndex)
+                        {
+                            args.insertAtIndex -= 1;
+                        }
+                        draggedItem.RemoveFromParent();
+                        parentItem.InsertChild(Mathf.Clamp(args.insertAtIndex, 0, parentItem.children.Count - 1), draggedItem);
+                        this.SetSelection(new List<int>() { draggedItem.id });
+                        SetDirty();
+                    }
+                }
+                else
+                {
+                    mode = DragAndDropVisualMode.Rejected;
                 }
                 break;
             case DragAndDropPosition.OutsideItems://挪到一个没有item的地方
@@ -239,7 +265,27 @@ public class ScriptTreeView : TreeView
         }
 
 
-        return DragAndDropVisualMode.Move;
+        return mode;
+    }
+
+    private bool ValidateDrag(TreeViewItem src, TreeViewItem dest)
+    {
+        var srcItem = GetScriptItem(src.id);
+        var destItem = GetScriptItem(dest.id);
+        if (srcItem == null || destItem == null)
+            return false;
+
+        //父对象只能是block，子对象只能是func和if（即stat）
+        if (!(destItem.type == "block" && (srcItem.type == "func" || srcItem.type == "if")))
+            return false;
+
+        //如果srcItem为destItem的父辈，就不让srcItem移动到destItem了
+        if (srcItem.IsAncestorOf(destItem))
+        {
+            return false;
+        }
+
+        return true;
     }
 
     protected override bool CanRename(TreeViewItem item)
