@@ -10,13 +10,13 @@ public class InputContentFormWindow : EditorWindow
     private string m_content;
     private Action<string> m_action;
 
-    public static void OpenWindow(string title, Action<string> callback)
+    public static void OpenWindow(string title, Action<string> callback, string content = null)
     {
         var window = CreateInstance<InputContentFormWindow>();
         window.Show();
         window.m_action = callback;
         window.m_title = title;
-        window.m_content = string.Empty;
+        window.m_content = content ?? string.Empty;
     }
 
     private void OnGUI()

@@ -138,6 +138,7 @@ public static class ScriptTreeSerializer
     {
         type = jo.GetField("type").str;
     }
+
     public static BlockStatNode ToBlock(string json)
     {
         JSONObject jsonObject = new JSONObject(json);

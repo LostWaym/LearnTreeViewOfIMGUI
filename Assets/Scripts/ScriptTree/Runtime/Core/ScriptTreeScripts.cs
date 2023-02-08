@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
 using UnityEngine.Assertions;
 
@@ -8,6 +9,7 @@ namespace ScriptTree
 {
     public class ScriptTreeState
     {
+        public string title = "unknownBlock";
         public bool completed;
         public object retValue;
         public int statIndex = -1;
@@ -43,12 +45,52 @@ namespace ScriptTree
 
         public T CheckOutParameter<T>(int index)
         {
-            return (T)parameters[index];
+            object value = parameters[index];
+            if (!(value is T))
+            {
+                PrintCurrent($"没有为参数index={index}找到对应的类型，期望{typeof(T).Name}，实际上为{(value == null ? "null" : value.GetType().Name)}", true);
+                return default;
+            }
+            return (T)value;
         }
 
         public object CheckOutParameter(int index)
         {
             return parameters[index];
+        }
+
+        public void GetPrintContent(StringBuilder sb, int depth = 1)
+        {
+            sb.AppendLine($"{depth} - <{title}> - statIndex: {statIndex} - node:{curStatNode?.GetType().Name ?? "Unknown"}#{(curStatNode == null ? -1 : curStatNode.id)}");
+        }
+
+        public void PrintCurrent(string extraContent, bool isError = false, StringBuilder sb = null, int depth = 1)
+        {
+            sb = sb ?? new StringBuilder();
+
+            if (!string.IsNullOrEmpty(extraContent))
+            {
+                sb.AppendLine($"##{extraContent}");
+            }
+
+            GetPrintContent(sb);
+
+            var p = parent;
+            var depth2 = depth;
+            while (parent != null)
+            {
+                parent.GetPrintContent(sb, ++depth2);
+                parent = parent.parent;
+            }
+
+            if (isError)
+            {
+                Debug.LogError(sb.ToString());
+            }
+            else
+            {
+                Debug.Log(sb.ToString());
+            }
         }
     }
 
@@ -149,6 +191,7 @@ namespace ScriptTree
             ScriptTreeState newState = new ScriptTreeState();
             newState.parent = state;
             newState.parameters = funcParameters;
+            newState.title = "@" + funcName;
             return func.Execute(newState);
         }
     }
@@ -191,10 +234,6 @@ namespace ScriptTree
         public bool canCallSingle;
         public List<ParameterInfo> parameterInfoes = new List<ParameterInfo>();
         public ParameterTypeInfo returnType;
-        public object Execute()
-        {
-            return Execute(new ScriptTreeState());
-        }
 
         public virtual object Execute(ScriptTreeState state)
         {
@@ -286,6 +325,7 @@ namespace ScriptTree
             return func;
         }
 
+        public static event Action OnInit;
         public static void InitDefaultTypeAndFunc()
         {
             if (hasInit)
@@ -377,6 +417,8 @@ namespace ScriptTree
                 return state.CheckOutParameter<bool>(0);
             });
             previousRegistee.desc = "布尔值字面量";
+
+            OnInit?.Invoke();
         }
 
         private static ScriptTreeFuncBase previousRegistee;
@@ -469,6 +511,7 @@ namespace ScriptTree
 
         public static void ExecuteStat(BlockStatNode block, ScriptTreeState state)
         {
+            ScriptTreeFunctionManager.InitDefaultTypeAndFunc();
             var rootContainer = block.children;
             foreach (var root in rootContainer)
             {
