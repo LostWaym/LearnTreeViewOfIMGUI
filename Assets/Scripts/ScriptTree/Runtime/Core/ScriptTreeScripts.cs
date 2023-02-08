@@ -283,6 +283,7 @@ namespace ScriptTree
         public string name;
         public bool canBeLiteral;
         public Func<object> getDefaultValue;
+        public Type literalClass;
     }
 
     //由ScriptTree结构构成的扩展函数（软编码）
@@ -338,6 +339,11 @@ namespace ScriptTree
             ParameterTypeInfoes.tstring = RegisterParameterType("string", () => string.Empty, true);
             ParameterTypeInfoes.tbool = RegisterParameterType("bool", () => false, true);
             ParameterTypeInfoes.tVector3 = RegisterParameterType("Vector3", () => Vector3.zero);
+
+            BindLiteralClass<StringLiteralExpNode>(ParameterTypeInfoes.tstring);
+            BindLiteralClass<IntLiteralExpNode>(ParameterTypeInfoes.tint);
+            BindLiteralClass<FloatLiteralExpNode>(ParameterTypeInfoes.tfloat);
+            BindLiteralClass<BoolLiteralExpNode>(ParameterTypeInfoes.tbool);
 
             RegisterFunction("void SetValue key:string value:any", true, (state, state2) =>
             {
@@ -445,6 +451,19 @@ namespace ScriptTree
             previousRegistee.desc = "布尔值字面量";
 
             OnInit?.Invoke();
+        }
+
+        private static Dictionary<Type, ParameterTypeInfo> m_type2info = new Dictionary<Type, ParameterTypeInfo>();
+        public static void BindLiteralClass<T>(ParameterTypeInfo info)
+        {
+            m_type2info[typeof(T)] = info;
+            info.literalClass = typeof(T);
+        }
+
+        public static ParameterTypeInfo GetLiteralTypeInfo(Type type)
+        {
+            m_type2info.TryGetValue(type, out ParameterTypeInfo info);
+            return info;
         }
 
         private static ScriptTreeFuncBase previousRegistee;

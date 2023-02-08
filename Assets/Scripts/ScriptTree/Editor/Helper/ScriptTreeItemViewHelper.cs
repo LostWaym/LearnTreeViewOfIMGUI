@@ -65,6 +65,7 @@ public class ParameterData
 {
     public bool isLiteral;
     public ParameterTypeInfo paramInfo;
+    public ParameterTypeInfo paramInfo2;
     public string funcName;
     public object literalValue;
 }
@@ -229,6 +230,10 @@ public static class ScriptTreeItemViewHelper
                 view.displayName = $"{localName}: literal: {literalExpNode.Execute(null)}";
                 data.isLiteral = true;
                 data.literalValue = literalExpNode.Execute(null);
+                if (data.paramInfo == ParameterTypeInfoes.tany)
+                {
+                    data.paramInfo2 = ScriptTreeFunctionManager.GetLiteralTypeInfo(node.GetType());
+                }
             }
         }
         else
@@ -250,13 +255,47 @@ public static class ScriptTreeItemViewHelper
         {
             OpenSelectionForm((index, selection) =>
             {
-                if (index == 0 && typeInfo.canBeLiteral)
+                if (index == 0)
                 {
-                    data.isLiteral = true;
-                    data.literalValue = data.paramInfo.getDefaultValue();
-                    view.displayName = $"{localName}: literal: {data.literalValue}";
-                    view.children.Clear();
-                    tree.SetDirty();
+                    if (typeInfo.canBeLiteral)
+                    {
+                        data.paramInfo2 = null;
+                        data.isLiteral = true;
+                        data.literalValue = data.paramInfo.getDefaultValue();
+                        view.displayName = $"{localName}: literal: {data.literalValue}";
+                        view.children.Clear();
+                        tree.SetDirty();
+                    }
+                    else if (typeInfo == ParameterTypeInfoes.tany)
+                    {
+                        OpenSelectionForm((i, s) =>
+                        {
+                            if (i == 0)
+                            {
+                                data.paramInfo2 = ParameterTypeInfoes.tstring;
+                            }
+                            else if(i == 1)
+                            {
+                                data.paramInfo2 = ParameterTypeInfoes.tint;
+                            }
+                            else if(i == 2)
+                            {
+                                data.paramInfo2 = ParameterTypeInfoes.tfloat;
+                            }
+                            else if(i == 3)
+                            {
+                                data.paramInfo2 = ParameterTypeInfoes.tbool;
+                            }
+                            if (data.paramInfo2 != null)
+                            {
+                                data.isLiteral = true;
+                                data.literalValue = data.paramInfo2.getDefaultValue();
+                                view.displayName = $"{localName}: literal: {data.literalValue}";
+                                view.children.Clear();
+                                tree.SetDirty();
+                            }
+                        }, "StringLiteral", "IntLiteral", "FloatLiteral", "BoolLiteral");
+                    }
                 }
                 else if (index == 1)
                 {
@@ -267,6 +306,7 @@ public static class ScriptTreeItemViewHelper
 
                         FillParameter(view, ret.parameterInfoes, null);
                         data.isLiteral = false;
+                        data.paramInfo2 = null;
                         data.literalValue = null;
                         data.funcName = ret.name;
                         view.displayName = $"{localName}: {ret.name}()";
@@ -280,7 +320,8 @@ public static class ScriptTreeItemViewHelper
         {
             if (data.isLiteral)
             {
-                if (data.paramInfo == ParameterTypeInfoes.tint)
+                var paramInfo = data.paramInfo2 == null ? data.paramInfo : data.paramInfo2;
+                if (paramInfo == ParameterTypeInfoes.tint)
                 {
                     int value = (int)data.literalValue;
                     EditorGUI.BeginChangeCheck();
@@ -292,7 +333,7 @@ public static class ScriptTreeItemViewHelper
                         tree.SetDirty();
                     }
                 }
-                else if (data.paramInfo == ParameterTypeInfoes.tfloat)
+                else if (paramInfo == ParameterTypeInfoes.tfloat)
                 {
                     float value = (float)data.literalValue;
                     EditorGUI.BeginChangeCheck();
@@ -304,7 +345,7 @@ public static class ScriptTreeItemViewHelper
                         tree.SetDirty();
                     }
                 }
-                else if (data.paramInfo == ParameterTypeInfoes.tstring)
+                else if (paramInfo == ParameterTypeInfoes.tstring)
                 {
                     string value = (string)data.literalValue;
                     EditorGUI.BeginChangeCheck();
@@ -316,7 +357,7 @@ public static class ScriptTreeItemViewHelper
                         tree.SetDirty();
                     }
                 }
-                else if (data.paramInfo == ParameterTypeInfoes.tbool)
+                else if (paramInfo == ParameterTypeInfoes.tbool)
                 {
                     bool value = (bool)data.literalValue;
                     EditorGUI.BeginChangeCheck();
@@ -516,28 +557,29 @@ public static class ScriptTreeItemViewHelper
         BaseExpNode exp = null;
         if (data.isLiteral)
         {
-            object literalValue = data.literalValue == null ? data.paramInfo.getDefaultValue() : data.literalValue;
-            if (data.paramInfo == ParameterTypeInfoes.tint)
+            var paramInfo = data.paramInfo2 == null ? data.paramInfo : data.paramInfo2;
+            object literalValue = data.literalValue == null ? paramInfo.getDefaultValue() : data.literalValue;
+            if (paramInfo == ParameterTypeInfoes.tint)
             {
                 IntLiteralExpNode node = new IntLiteralExpNode();
                 node.value = (int)literalValue;
                 exp = node;
             }
-            else if(data.paramInfo == ParameterTypeInfoes.tfloat)
+            else if(paramInfo == ParameterTypeInfoes.tfloat)
             {
 
                 FloatLiteralExpNode node = new FloatLiteralExpNode();
                 node.value = (float)literalValue;
                 exp = node;
             }
-            else if(data.paramInfo == ParameterTypeInfoes.tstring)
+            else if(paramInfo == ParameterTypeInfoes.tstring)
             {
 
                 StringLiteralExpNode node = new StringLiteralExpNode();
                 node.value = (string)literalValue;
                 exp = node;
             }
-            else if(data.paramInfo == ParameterTypeInfoes.tbool)
+            else if(paramInfo == ParameterTypeInfoes.tbool)
             {
 
                 BoolLiteralExpNode node = new BoolLiteralExpNode();
