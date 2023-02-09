@@ -3,12 +3,14 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
+using UnityEditor.Compilation;
 using UnityEditor.IMGUI.Controls;
 using UnityEditor.PackageManager.UI;
 using UnityEngine;
 
 public class ScriptTreeViewWindow : EditorWindow
 {
+    public string label = string.Empty;
     private TreeViewState state;
     private ScriptTreeView treeView;
 
@@ -20,31 +22,71 @@ public class ScriptTreeViewWindow : EditorWindow
     private Func<string> jsonGetter = null;
     private Action<string> jsonSetter = null;
 
+    private Func<string> defJsonGetter => ()=> json;
+    private Action<string> defJsonSetter => str => json = str;
+
+    private bool isExternEdit;
+
+
     [MenuItem("Test/ScriptTreeView/Real")]
     public static void OpenWindow()
     {
         var window = GetWindow<ScriptTreeViewWindow>();
         window.minSize = new Vector2(256, 256);
-        window.jsonGetter = () => window.json;
-        window.jsonSetter = str => window.json = str;
+        window.jsonGetter = window.defJsonGetter;
+        window.jsonSetter = window.defJsonSetter;
+        window.isExternEdit = false;
         window.ReadFromJson(window.jsonGetter());
+        window.label = string.Empty;
     }
 
-    public static void OpenWindow(Func<string> jsonGetter, Action<string> jsonSetter)
+    public static void OpenWindow(string label, Func<string> jsonGetter, Action<string> jsonSetter)
     {
         var window = GetWindow<ScriptTreeViewWindow>();
         window.minSize = new Vector2(256, 256);
         window.jsonGetter = jsonGetter;
         window.jsonSetter = jsonSetter;
+        window.isExternEdit = true;
         window.ReadFromJson(window.jsonGetter());
+        window.label = label;
     }
 
     private void OnEnable()
     {
+        EditorApplication.playModeStateChanged += PlayModeChanged;
+        CompilationPipeline.compilationFinished += CompilationFinished;
+
         ScriptTreeFunctionManager.InitDefaultTypeAndFunc();
         state = new TreeViewState();
         treeView = new ScriptTreeView(state);
-        treeView.Reload();
+        treeView.Reload(); 
+    }
+
+    private void OnDisable()
+    {
+        EditorApplication.playModeStateChanged -= PlayModeChanged;
+        CompilationPipeline.compilationFinished -= CompilationFinished;
+    }
+
+    private void CompilationFinished(object value)
+    {
+        isExternEdit = false;
+        label = string.Empty;
+    }
+
+    private void PlayModeChanged(PlayModeStateChange args)
+    {
+        if (!isExternEdit)
+            return;
+
+        if (args == PlayModeStateChange.ExitingEditMode || args == PlayModeStateChange.ExitingPlayMode)
+        {
+            jsonSetter = defJsonSetter;
+            jsonGetter = defJsonGetter;
+            isExternEdit = false;
+            treeView.dataSourceRoot = null;
+            treeView.Reload();
+        }
     }
 
     private bool dragging = false;
@@ -89,6 +131,9 @@ public class ScriptTreeViewWindow : EditorWindow
             Event.current.Use();
         }
         GUILayout.BeginArea(SplitRect(bottomRect, inspectorWidth, 1), "Inspector", GUI.skin.window);
+        if (isExternEdit) {
+            EditorGUILayout.LabelField("正在编辑：" + label, EditorStyles.wordWrappedLabel);
+        } 
         if (treeView.selectedView != null)
         {
             //if (!string.IsNullOrEmpty(treeView.selectedView.hint))

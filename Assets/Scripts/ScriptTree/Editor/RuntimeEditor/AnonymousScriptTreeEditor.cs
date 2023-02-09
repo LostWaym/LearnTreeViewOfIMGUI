@@ -12,7 +12,7 @@ public class AnonymousScriptTreeEditor : Editor
         AnonymousScriptTree tree = (AnonymousScriptTree)target;
         if (GUILayout.Button("打开编辑器"))
         {
-            ScriptTreeViewWindow.OpenWindow(
+            ScriptTreeViewWindow.OpenWindow($"{(tree.gameObject.scene.IsValid() ? tree.gameObject.scene.name : "NoScene")} - {tree.gameObject.name} - <AnonymousScriptTree>",
                 ()=>tree.json,
                 (str)=>
                 {
