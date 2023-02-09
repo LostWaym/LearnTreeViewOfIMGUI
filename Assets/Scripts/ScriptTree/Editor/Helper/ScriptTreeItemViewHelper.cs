@@ -1,4 +1,4 @@
-﻿using ScriptTree;
+﻿using ScriptTrees;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -174,7 +174,7 @@ public static class ScriptTreeItemViewHelper
     }
 
     //双击切换表达式类型
-    public static NodeItemView BuildFunc(ScriptTreeFuncBase func, CallFuncExpNode exp)
+    public static NodeItemView BuildFunc(ScriptTrees.ScriptTree func, CallFuncExpNode exp)
     {
         var view = NewItemView;
         view.canRemove = true;
@@ -480,9 +480,9 @@ public static class ScriptTreeItemViewHelper
     }
 
 
-    public static void OpenFuncSelectionForm(Action<ScriptTreeFuncBase> callback, ParameterTypeInfo info = null)
+    public static void OpenFuncSelectionForm(Action<ScriptTrees.ScriptTree> callback, ParameterTypeInfo info = null)
     {
-        List<ScriptTreeFuncBase> list;
+        List<ScriptTrees.ScriptTree> list;
         if (info == null || info == ParameterTypeInfoes.tany)
         {
             list = ScriptTreeFunctionManager.m_allList;
@@ -503,16 +503,16 @@ public static class ScriptTreeItemViewHelper
         }, "选择");
     }
 
-    public static void OpenParameterSelectionForm(Action<ScriptTreeFuncBase> callback, ParameterTypeInfo info = null)
+    public static void OpenParameterSelectionForm(Action<ScriptTrees.ScriptTree> callback, ParameterTypeInfo info = null)
     {
-        List<ScriptTreeFuncBase> list;
+        List<ScriptTrees.ScriptTree> list;
         if (info == null || info == ParameterTypeInfoes.tany)
         {
             list = ScriptTreeFunctionManager.m_allReturnList;
         }
         else
         {
-            list = new List<ScriptTreeFuncBase>(ScriptTreeFunctionManager.GetReturnTypeOf(info.name));
+            list = new List<ScriptTrees.ScriptTree>(ScriptTreeFunctionManager.GetReturnTypeOf(info.name));
             ScriptTreeFunctionManager.GetReturnTypeOf(ParameterTypeInfoes.tany.name).ForEach(b => list.Add(b));
         }
 

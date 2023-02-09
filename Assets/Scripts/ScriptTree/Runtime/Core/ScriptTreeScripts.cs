@@ -5,11 +5,13 @@ using System.Text;
 using UnityEngine;
 using UnityEngine.Assertions;
 
-namespace ScriptTree
+namespace ScriptTrees
 {
     public class ScriptTreeState
     {
-        public string title = "unknownBlock";
+        public const string DEFAULT_BLOCK_NAME = "unknownBlock";
+
+        public string title = DEFAULT_BLOCK_NAME;
         public bool completed;
         public object retValue;
         public int statIndex = -1;
@@ -21,12 +23,14 @@ namespace ScriptTree
 
         public void Clear()
         {
+            title = DEFAULT_BLOCK_NAME;
             completed = false;
             retValue = null;
             data.Clear();
             curStatNode = null;
             statIndex = -1;
             parameters = null;
+            parent = null;
         }
 
         public object GetValue(string key)
@@ -45,7 +49,7 @@ namespace ScriptTree
 
         public T CheckOutParameter<T>(int index)
         {
-            object value = parameters[index];
+            object value = CheckOutParameter(index);
             if (!(value is T))
             {
                 PrintCurrent($"没有为参数index={index}找到对应的类型，期望{typeof(T).Name}，实际上为{(value == null ? "null" : value.GetType().Name)}", true);
@@ -56,7 +60,7 @@ namespace ScriptTree
 
         public object CheckOutParameter(int index)
         {
-            return parameters[index];
+            return parameters.Count > index ? parameters[index] : null;
         }
 
         public void GetPrintContent(StringBuilder sb, int depth = 1)
@@ -188,7 +192,7 @@ namespace ScriptTree
 
         public override object Execute(ScriptTreeState state)
         {
-            ScriptTreeFuncBase func = ScriptTreeFunctionManager.GetFunction(funcName);
+            ScriptTree func = ScriptTreeFunctionManager.GetFunction(funcName);
             List<object> funcParameters = new List<object>();
             for (int i = 0; i < parameters.Count; i++)
             {
@@ -235,8 +239,8 @@ namespace ScriptTree
     #endregion
 
 
-    //扩展方法基础类
-    public class ScriptTreeFuncBase
+    //脚本树方法基础类
+    public class ScriptTree
     {
         public string name;
         public string desc;
@@ -248,25 +252,35 @@ namespace ScriptTree
         {
             return null;
         }
-
-        //public T CheckOutParameter<T>(int index)
-        //{
-        //    return (T)parameters[index];
-        //}
-
-        //public object CheckOutParameter(int index)
-        //{
-        //    return parameters[index];
-        //}
     }
 
-    public class HardCodeScriptTreeFunc : ScriptTreeFuncBase
+    //由c#构成的扩展函数（硬编码）
+    public class HardCodeScriptTreeFunc : ScriptTree
     {
-        public Func<ScriptTreeState, ScriptTreeFuncBase, object> func;
+        public Func<ScriptTreeState, ScriptTree, object> func;
 
         public override object Execute(ScriptTreeState state)
         {
             return func(state, this);
+        }
+    }
+
+    //由ScriptTree结构构成的扩展函数（软编码）
+    public class ScriptTreeFunc : ScriptTree
+    {
+        public BlockStatNode node;
+        public override object Execute(ScriptTreeState state)
+        {
+            for (int i = 0; i < parameterInfoes.Count; i++)
+            {
+                var info = parameterInfoes[i];
+                object value = state.CheckOutParameter(i);
+                state.SetValue("@" + info.name, value);
+            }
+
+            ScriptTreeInterpreter.ExecuteStat(node, state);
+
+            return state.retValue;
         }
     }
 
@@ -320,26 +334,6 @@ namespace ScriptTree
         }
     }
 
-    //由ScriptTree结构构成的扩展函数（软编码）
-    public class ScriptTreeFunc : ScriptTreeFuncBase
-    {
-        public string scriptName;
-        public BlockStatNode node;
-        public override object Execute(ScriptTreeState state)
-        {
-            for (int i = 0; i < parameterInfoes.Count; i++)
-            {
-                var info = parameterInfoes[i];
-                object value = state.CheckOutParameter(i);
-                state.SetValue("@"+info.name, value);
-            }
-
-            ScriptTreeInterpreter.ExecuteStat(node, state);
-
-            return state.retValue;
-        }
-    }
-
     public static partial class ParameterTypeInfoes
     {
         public static ParameterTypeInfo tvoid, tint, tfloat, tstring, tbool, tVector3, tany;
@@ -348,13 +342,13 @@ namespace ScriptTree
     public static class ScriptTreeFunctionManager
     {
         public static bool hasInit = false;
-        public static Dictionary<string, ScriptTreeFuncBase> m_name2func = new Dictionary<string, ScriptTreeFuncBase>();
-        public static Dictionary<string, List<ScriptTreeFuncBase>> m_type2funcs = new Dictionary<string, List<ScriptTreeFuncBase>>();
-        public static List<ScriptTreeFuncBase> m_allList = new List<ScriptTreeFuncBase>();
-        public static List<ScriptTreeFuncBase> m_allReturnList = new List<ScriptTreeFuncBase>();
+        public static Dictionary<string, ScriptTree> m_name2func = new Dictionary<string, ScriptTree>();
+        public static Dictionary<string, List<ScriptTree>> m_type2funcs = new Dictionary<string, List<ScriptTree>>();
+        public static List<ScriptTree> m_allList = new List<ScriptTree>();
+        public static List<ScriptTree> m_allReturnList = new List<ScriptTree>();
         public static Dictionary<string, ParameterTypeInfo> m_name2type = new Dictionary<string, ParameterTypeInfo>();
 
-        public static ScriptTreeFuncBase GetFunction(string name)
+        public static ScriptTree GetFunction(string name)
         {
             m_name2func.TryGetValue(name, out var func);
             return func;
@@ -500,8 +494,8 @@ namespace ScriptTree
             return info;
         }
 
-        private static ScriptTreeFuncBase previousRegistee;
-        public static ScriptTreeFuncBase RegisterFunction(string name, string returnType, bool canCallSingle, List<ParameterInfo> infoes, Func<ScriptTreeState, ScriptTreeFuncBase, object> executeMethod)
+        private static ScriptTree previousRegistee;
+        public static ScriptTree RegisterFunction(string name, string returnType, bool canCallSingle, List<ParameterInfo> infoes, Func<ScriptTreeState, ScriptTree, object> executeMethod)
         {
             HardCodeScriptTreeFunc func = new HardCodeScriptTreeFunc();
             func.func = executeMethod;
@@ -520,7 +514,7 @@ namespace ScriptTree
             return func;
         }
 
-        public static ScriptTreeFuncBase RegisterFunction(string descText, bool canCallSingle, Func<ScriptTreeState, ScriptTreeFuncBase, object> executeMethod)
+        public static ScriptTree RegisterFunction(string descText, bool canCallSingle, Func<ScriptTreeState, ScriptTree, object> executeMethod)
         {
             string[] splits = descText.Split(' ');
             string returnType = splits[0];
@@ -552,18 +546,18 @@ namespace ScriptTree
             return m_name2type[name];
         }
 
-        private static List<ScriptTreeFuncBase> GetOrCreateListOfType2Funcs(string typeName)
+        private static List<ScriptTree> GetOrCreateListOfType2Funcs(string typeName)
         {
             if (!m_type2funcs.TryGetValue(typeName, out var list))
             {
-                list = new List<ScriptTreeFuncBase>();
+                list = new List<ScriptTree>();
                 m_type2funcs[typeName] = list;
             }
 
             return list;
         }
 
-        private static void InsertFuncToType2Funcs(ScriptTreeFuncBase func)
+        private static void InsertFuncToType2Funcs(ScriptTree func)
         {
             if (func.returnType == null)
             {
@@ -573,7 +567,7 @@ namespace ScriptTree
             GetOrCreateListOfType2Funcs(func.returnType.name).Add(func);
         }
 
-        public static List<ScriptTreeFuncBase> GetReturnTypeOf(string name)
+        public static List<ScriptTree> GetReturnTypeOf(string name)
         {
             return GetOrCreateListOfType2Funcs(name);
         }
@@ -581,6 +575,17 @@ namespace ScriptTree
 
     public static class ScriptTreeInterpreter
     {
+        public static ScriptTreeState ExecuteTree(ScriptTree tree)
+        {
+            var state = new ScriptTreeState();
+            tree.Execute(state);
+            return state;
+        }
+        public static void ExecuteTree(ScriptTree tree, ScriptTreeState state)
+        {
+            tree.Execute(state);
+        }
+
         public static ScriptTreeState ExecuteStat(BlockStatNode block)
         {
             ScriptTreeState state = new ScriptTreeState();

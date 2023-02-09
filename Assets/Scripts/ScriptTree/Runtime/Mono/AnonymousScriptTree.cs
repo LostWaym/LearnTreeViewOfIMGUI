@@ -1,4 +1,4 @@
-﻿using ScriptTree;
+﻿using ScriptTrees;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -7,7 +7,9 @@ public class AnonymousScriptTree : MonoBehaviour
 {
     [HideInInspector][SerializeField]
     public string json = "[]";
+    public string title;
     public BlockStatNode node;
+    public ScriptTreeFunc func;
 
     private void CheckAndInitNode()
     {
@@ -16,10 +18,26 @@ public class AnonymousScriptTree : MonoBehaviour
 
         node = ScriptTreeSerializer.ToBlock(json);
     }
-    public BlockStatNode GetNode()
+    private BlockStatNode GetNode()
     {
         CheckAndInitNode();
         return node;
+    }
+
+    public ScriptTree GetScriptTree()
+    {
+        if (func != null)
+            return func;
+
+        func = new ScriptTreeFunc();
+        func.name = title ?? "AnonymousScriptTree";
+        func.returnType = ParameterTypeInfoes.tvoid;
+        func.parameterInfoes = new List<ParameterInfo>();
+        func.canCallSingle = true;
+        func.desc = "";
+        func.node = GetNode();
+
+        return func;
     }
 
     // Start is called before the first frame update
