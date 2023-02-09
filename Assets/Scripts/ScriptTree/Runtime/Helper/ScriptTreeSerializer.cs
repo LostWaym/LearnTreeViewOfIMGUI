@@ -32,10 +32,24 @@ public static class ScriptTreeSerializer
                 {
                     jsonArray.Add(BuildCallFuncStatNodeObject(callFuncStatNode));
                 }
+                else if (item is ReturnStatNode returnStatNode)
+                {
+                    jsonArray.Add(BuildReturnStatNodeObject(returnStatNode));
+                }
             }
         }
 
         return jsonArray;
+    }
+
+    private static JSONObject BuildReturnStatNodeObject(ReturnStatNode node)
+    {
+        JSONObject root = NewJsonObject;
+        JSONObject exp = BuildParameterObject(node.exp);
+        root.AddField("type", "return");
+        root.AddField("value", exp);
+
+        return root;
     }
 
     private static JSONObject BuildIfStatNodeObject(IfStatNode node)
@@ -179,6 +193,12 @@ public static class ScriptTreeSerializer
                     CallFuncStatNode statNode = new CallFuncStatNode();
                     statNode.exp = BuildCallFuncExpNode(item);
                     rootNode.children.Add(statNode);
+                }
+                else if (type == "return")
+                {
+                    ReturnStatNode returnStatNode = new ReturnStatNode();
+                    returnStatNode.exp = BuildParameter(item.GetField("value"));
+                    rootNode.children.Add(returnStatNode);
                 }
                 else
                 {

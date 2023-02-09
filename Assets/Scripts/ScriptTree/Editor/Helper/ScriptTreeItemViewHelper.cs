@@ -144,6 +144,14 @@ public static class ScriptTreeItemViewHelper
         return view;
     }
 
+    public static NodeItemView BuildReturnStat(ReturnStatNode node)
+    {
+        var view = BuildParameter(node?.exp, "return", ParameterTypeInfoes.tany, "#返回");
+        view.type = "return";
+
+        return view;
+    }
+
     public static NodeItemView BuildIfCase(IfCaseData ifcase)
     {
         var view = NewItemView;
@@ -416,8 +424,7 @@ public static class ScriptTreeItemViewHelper
                     view.AddChild(callFuncStatView);
                 }else if (item is ReturnStatNode returnStat)
                 {
-                    var retView = NewItemView;
-                    retView.type = "return";
+                    var retView = BuildReturnStat(returnStat);
                     view.AddChild(retView);
                 }
             }
@@ -455,7 +462,14 @@ public static class ScriptTreeItemViewHelper
                             tree.SetDirty();
                         });
                     }
-                }, "If-Stat", "Expression");
+                    else if(index == 2)
+                    {
+                        var insertIndex = view.IndexOfChild(inserterView);
+                        var inserteeView = BuildReturnStat(null);
+                        view.InsertChild(insertIndex, inserteeView);
+                        tree.SetDirty();
+                    }
+                }, "If-Stat", "Expression", "Return-Stat");
             };
 
             view.AddChild(inserterView);
@@ -559,6 +573,13 @@ public static class ScriptTreeItemViewHelper
 
                 node.children.Add(callFuncStatNode);
             }
+            else if (item.type == "return")
+            {
+                ReturnStatNode stat = new ReturnStatNode();
+                stat.exp = BuildParameterNodeData(item);
+
+                node.children.Add(stat);
+            }
         }
 
         return node;
@@ -566,9 +587,9 @@ public static class ScriptTreeItemViewHelper
 
     public static BaseExpNode BuildParameterNodeData(NodeItemView root)
     {
-        if (root.type != "parameter")
+        if (root.type != "parameter" && root.type != "return")
         {
-            throw new Exception($"传入的类型不是parameter！");
+            throw new Exception($"传入的类型不是parameter或return！");
         }
 
         ParameterData data = root.data as ParameterData;

@@ -54,24 +54,21 @@ public class ScriptTreeViewWindow : EditorWindow
     private void OnEnable()
     {
         EditorApplication.playModeStateChanged += PlayModeChanged;
-        CompilationPipeline.compilationFinished += CompilationFinished;
+
+        isExternEdit = false;
+        label = string.Empty;
+        jsonSetter = defJsonSetter;
+        jsonGetter = defJsonGetter;
 
         ScriptTreeFunctionManager.InitDefaultTypeAndFunc();
         state = new TreeViewState();
         treeView = new ScriptTreeView(state);
-        treeView.Reload(); 
+        treeView.Reload();
     }
 
     private void OnDisable()
     {
         EditorApplication.playModeStateChanged -= PlayModeChanged;
-        CompilationPipeline.compilationFinished -= CompilationFinished;
-    }
-
-    private void CompilationFinished(object value)
-    {
-        isExternEdit = false;
-        label = string.Empty;
     }
 
     private void PlayModeChanged(PlayModeStateChange args)
@@ -168,8 +165,6 @@ public class ScriptTreeViewWindow : EditorWindow
             treeView.dataSourceRoot = ScriptTreeItemViewHelper.BuildBlock(node);
             treeView.SetDirty();
         }
-
-
 
         if (GUILayout.Button("保存并输出结构(json)", GUILayout.ExpandWidth(false), GUILayout.ExpandHeight(true)))
         {

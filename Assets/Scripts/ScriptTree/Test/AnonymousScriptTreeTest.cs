@@ -23,7 +23,7 @@ public class AnonymousScriptTreeTest : MonoBehaviour
             state.SetValue("@vec3", new Vector3(1.23f, -2.25f, 6694.2f));
             state.SetValue("@condition", passValue);
             ScriptTreeInterpreter.ExecuteStat(node, state);
-            Debug.Log($"返回内容{state.GetValue("@return")}");
+            Debug.Log($"返回内容{state.retValue}");
         });
     }
 

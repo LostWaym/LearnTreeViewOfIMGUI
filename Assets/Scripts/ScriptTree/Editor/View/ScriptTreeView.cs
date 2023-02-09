@@ -206,7 +206,7 @@ public class ScriptTreeView : TreeView
         if (item == null)
             return false;
         
-        return new List<string>() { "if", "func" }.Contains(item.type);
+        return new List<string>() { "if", "func", "return" }.Contains(item.type);
     }
 
     protected override void SetupDragAndDrop(SetupDragAndDropArgs args)
@@ -275,8 +275,8 @@ public class ScriptTreeView : TreeView
         if (srcItem == null || destItem == null)
             return false;
 
-        //父对象只能是block，子对象只能是func和if（即stat）
-        if (!(destItem.type == "block" && (srcItem.type == "func" || srcItem.type == "if")))
+        //父对象只能是block，子对象只能是func和if和return（即stat）
+        if (!(destItem.type == "block" && new List<string>() { "func", "if", "return" }.Contains(srcItem.type)))
             return false;
 
         //如果srcItem为destItem的父辈，就不让srcItem移动到destItem了

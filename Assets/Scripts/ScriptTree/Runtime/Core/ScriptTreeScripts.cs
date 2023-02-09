@@ -284,6 +284,31 @@ namespace ScriptTree
         public bool canBeLiteral;
         public Func<object> getDefaultValue;
         public Type literalClass;
+
+        public override int GetHashCode()
+        {
+            return name.GetHashCode();
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is ParameterTypeInfo other)
+            {
+                return this == other;
+            }
+
+            return false;
+        }
+
+        public static bool operator ==(ParameterTypeInfo self, ParameterTypeInfo other)
+        {
+            return self?.name == other?.name;
+        }
+
+        public static bool operator !=(ParameterTypeInfo self, ParameterTypeInfo other)
+        {
+            return self?.name != other?.name;
+        }
     }
 
     //由ScriptTree结构构成的扩展函数（软编码）
