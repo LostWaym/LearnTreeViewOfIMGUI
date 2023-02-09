@@ -195,7 +195,7 @@ public class ScriptTreeViewWindow : EditorWindow
                 var node = ScriptTreeSerializer.BuildBlock(obj);
                 treeView.dataSourceRoot = ScriptTreeItemViewHelper.BuildBlock(node);
                 treeView.SetDirty();
-            });
+            }, jsonGetter());
         }
         GUILayout.FlexibleSpace();
         if (GUILayout.Button("尝试执行", GUILayout.ExpandWidth(false), GUILayout.ExpandHeight(true)))

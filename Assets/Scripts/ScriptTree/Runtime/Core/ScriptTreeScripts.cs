@@ -172,6 +172,15 @@ namespace ScriptTree
     {
     }
 
+    public class GetVariableExpNode : BaseExpNode
+    {
+        public string key;
+        public override object Execute(ScriptTreeState state)
+        {
+            return state.GetValue(key);
+        }
+    }
+
     public class CallFuncExpNode : BaseExpNode
     {
         public string funcName;
