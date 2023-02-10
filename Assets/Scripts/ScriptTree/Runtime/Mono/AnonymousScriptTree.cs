@@ -10,6 +10,8 @@ public class AnonymousScriptTree : MonoBehaviour
     public string title;
     public BlockStatNode node;
     public ScriptTreeFunc func;
+    public ScriptTreeInfo info = new ScriptTreeInfo();
+    public ScriptTreeAsset asset;
 
     private void CheckAndInitNode()
     {
@@ -29,13 +31,16 @@ public class AnonymousScriptTree : MonoBehaviour
         if (func != null)
             return func;
 
-        func = new ScriptTreeFunc();
-        func.name = title ?? "AnonymousScriptTree";
-        func.returnType = ParameterTypeInfoes.tvoid;
-        func.parameterInfoes = new List<ParameterInfo>();
-        func.canCallSingle = true;
-        func.desc = "";
-        func.node = GetNode();
+        func = new ScriptTreeFunc
+        {
+            Name = title ?? "AnonymousScriptTree",
+            ReturnType = ParameterTypeInfoes.tvoid,
+            ParameterInfoes = new List<ParameterInfo>(),
+            CanCallSingle = true,
+            Desc = "",
+            node = GetNode(),
+            info = info
+        };
 
         return func;
     }

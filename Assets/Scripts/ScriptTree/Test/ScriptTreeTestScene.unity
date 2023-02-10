@@ -259,7 +259,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fb8f89d86e7e5be428ff7b84291d500a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  json: "[\n\t{\n\t\t\"type\":\"if\",\n\t\t\"cases\":[\n\t\t\t{\n\t\t\t\t\"condition\":{\n\t\t\t\t\t\"funcName\":\"Equal\",\n\t\t\t\t\t\"parameters\":[\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"funcName\":\"GetValue\",\n\t\t\t\t\t\t\t\"parameters\":[\n\t\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\t\"value\":\"@condition\",\n\t\t\t\t\t\t\t\t\t\"type\":\"StringLiteral\"\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t],\n\t\t\t\t\t\t\t\"type\":\"CallFunction\"\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"value\":0.000,\n\t\t\t\t\t\t\t\"type\":\"IntLiteral\"\n\t\t\t\t\t\t}\n\t\t\t\t\t],\n\t\t\t\t\t\"type\":\"CallFunction\"\n\t\t\t\t},\n\t\t\t\t\"stats\":[\n\t\t\t\t\t{\n\t\t\t\t\t\t\"type\":\"CallFunction\",\n\t\t\t\t\t\t\"funcName\":\"Debug\",\n\t\t\t\t\t\t\"parameters\":[\n\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\"value\":\"\u5206\u652F\u4E00\",\n\t\t\t\t\t\t\t\t\"type\":\"StringLiteral\"\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t]\n\t\t\t\t\t}\n\t\t\t\t]\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"condition\":{\n\t\t\t\t\t\"funcName\":\"Equal\",\n\t\t\t\t\t\"parameters\":[\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"funcName\":\"GetValue\",\n\t\t\t\t\t\t\t\"parameters\":[\n\t\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\t\"value\":\"@condition\",\n\t\t\t\t\t\t\t\t\t\"type\":\"StringLiteral\"\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t],\n\t\t\t\t\t\t\t\"type\":\"CallFunction\"\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"value\":1.000,\n\t\t\t\t\t\t\t\"type\":\"IntLiteral\"\n\t\t\t\t\t\t}\n\t\t\t\t\t],\n\t\t\t\t\t\"type\":\"CallFunction\"\n\t\t\t\t},\n\t\t\t\t\"stats\":[\n\t\t\t\t\t{\n\t\t\t\t\t\t\"type\":\"CallFunction\",\n\t\t\t\t\t\t\"funcName\":\"Debug\",\n\t\t\t\t\t\t\"parameters\":[\n\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\"value\":\"\u5206\u652F\u4E8C\",\n\t\t\t\t\t\t\t\t\"type\":\"StringLiteral\"\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t]\n\t\t\t\t\t}\n\t\t\t\t]\n\t\t\t}\n\t\t],\n\t\t\"default\":[\n\t\t\t{\n\t\t\t\t\"type\":\"return\",\n\t\t\t\t\"value\":{\n\t\t\t\t\t\"value\":\"\u5206\u652F\u4E09\",\n\t\t\t\t\t\"type\":\"StringLiteral\"\n\t\t\t\t}\n\t\t\t}\n\t\t]\n\t},\n\t{\n\t\t\"type\":\"CallFunction\",\n\t\t\"funcName\":\"Teleport\",\n\t\t\"parameters\":[\n\t\t\t{\n\t\t\t\t\"value\":0.000,\n\t\t\t\t\"type\":\"IntLiteral\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"funcName\":\"GetValue\",\n\t\t\t\t\"parameters\":[\n\t\t\t\t\t{\n\t\t\t\t\t\t\"value\":\"@vec3\",\n\t\t\t\t\t\t\"type\":\"StringLiteral\"\n\t\t\t\t\t}\n\t\t\t\t],\n\t\t\t\t\"type\":\"CallFunction\"\n\t\t\t}\n\t\t]\n\t},\n\t{\n\t\t\"type\":\"CallFunction\",\n\t\t\"funcName\":\"Debug\",\n\t\t\"parameters\":[\n\t\t\t{\n\t\t\t\t\"value\":\"\u55E8\u55E8\u55E8\",\n\t\t\t\t\"type\":\"StringLiteral\"\n\t\t\t}\n\t\t]\n\t},\n\t{\n\t\t\"type\":\"return\",\n\t\t\"value\":{\n\t\t\t\"value\":\"o(*\uFFE3\uFE36\uFFE3*)o\",\n\t\t\t\"type\":\"StringLiteral\"\n\t\t}\n\t}\n]"
+  json: "[\n\t{\n\t\t\"type\":\"if\",\n\t\t\"cases\":[\n\t\t\t{\n\t\t\t\t\"condition\":{\n\t\t\t\t\t\"funcName\":\"Equal\",\n\t\t\t\t\t\"parameters\":[\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"funcName\":\"GetValue\",\n\t\t\t\t\t\t\t\"parameters\":[\n\t\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\t\"value\":\"@condition\",\n\t\t\t\t\t\t\t\t\t\"type\":\"StringLiteral\"\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t],\n\t\t\t\t\t\t\t\"type\":\"CallFunction\"\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"value\":0.000,\n\t\t\t\t\t\t\t\"type\":\"IntLiteral\"\n\t\t\t\t\t\t}\n\t\t\t\t\t],\n\t\t\t\t\t\"type\":\"CallFunction\"\n\t\t\t\t},\n\t\t\t\t\"stats\":[\n\t\t\t\t\t{\n\t\t\t\t\t\t\"type\":\"CallFunction\",\n\t\t\t\t\t\t\"funcName\":\"Debug\",\n\t\t\t\t\t\t\"parameters\":[\n\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\"value\":\"\u5206\u652F\u4E00\",\n\t\t\t\t\t\t\t\t\"type\":\"StringLiteral\"\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t]\n\t\t\t\t\t}\n\t\t\t\t]\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"condition\":{\n\t\t\t\t\t\"funcName\":\"Equal\",\n\t\t\t\t\t\"parameters\":[\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"funcName\":\"GetValue\",\n\t\t\t\t\t\t\t\"parameters\":[\n\t\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\t\"value\":\"@condition\",\n\t\t\t\t\t\t\t\t\t\"type\":\"StringLiteral\"\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t],\n\t\t\t\t\t\t\t\"type\":\"CallFunction\"\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"value\":1.000,\n\t\t\t\t\t\t\t\"type\":\"IntLiteral\"\n\t\t\t\t\t\t}\n\t\t\t\t\t],\n\t\t\t\t\t\"type\":\"CallFunction\"\n\t\t\t\t},\n\t\t\t\t\"stats\":[\n\t\t\t\t\t{\n\t\t\t\t\t\t\"type\":\"CallFunction\",\n\t\t\t\t\t\t\"funcName\":\"Debug\",\n\t\t\t\t\t\t\"parameters\":[\n\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\"value\":\"\u5206\u652F\u4E8C\",\n\t\t\t\t\t\t\t\t\"type\":\"StringLiteral\"\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t]\n\t\t\t\t\t}\n\t\t\t\t]\n\t\t\t}\n\t\t],\n\t\t\"default\":[\n\t\t\t{\n\t\t\t\t\"type\":\"CallFunction\",\n\t\t\t\t\"funcName\":\"Debug\",\n\t\t\t\t\"parameters\":[\n\t\t\t\t\t{\n\t\t\t\t\t\t\"value\":\"\u5F3A\u5236\u7ED3\u675F\",\n\t\t\t\t\t\t\"type\":\"StringLiteral\"\n\t\t\t\t\t}\n\t\t\t\t]\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"type\":\"return\",\n\t\t\t\t\"value\":{\n\t\t\t\t\t\"value\":\"\u5206\u652F\u4E09\",\n\t\t\t\t\t\"type\":\"StringLiteral\"\n\t\t\t\t}\n\t\t\t}\n\t\t]\n\t},\n\t{\n\t\t\"type\":\"CallFunction\",\n\t\t\"funcName\":\"Teleport\",\n\t\t\"parameters\":[\n\t\t\t{\n\t\t\t\t\"value\":0.000,\n\t\t\t\t\"type\":\"IntLiteral\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"funcName\":\"GetValue\",\n\t\t\t\t\"parameters\":[\n\t\t\t\t\t{\n\t\t\t\t\t\t\"value\":\"@vec3\",\n\t\t\t\t\t\t\"type\":\"StringLiteral\"\n\t\t\t\t\t}\n\t\t\t\t],\n\t\t\t\t\"type\":\"CallFunction\"\n\t\t\t}\n\t\t]\n\t},\n\t{\n\t\t\"type\":\"CallFunction\",\n\t\t\"funcName\":\"Debug\",\n\t\t\"parameters\":[\n\t\t\t{\n\t\t\t\t\"funcName\":\"GetValue\",\n\t\t\t\t\"parameters\":[\n\t\t\t\t\t{\n\t\t\t\t\t\t\"value\":\"@outer\",\n\t\t\t\t\t\t\"type\":\"StringLiteral\"\n\t\t\t\t\t}\n\t\t\t\t],\n\t\t\t\t\"type\":\"CallFunction\"\n\t\t\t}\n\t\t]\n\t},\n\t{\n\t\t\"type\":\"return\",\n\t\t\"value\":{\n\t\t\t\"value\":\"o(*\uFFE3\uFE36\uFFE3*)o\",\n\t\t\t\"type\":\"StringLiteral\"\n\t\t}\n\t}\n]"
+  title: 
+  asset: {fileID: 1663613658}
 --- !u!1 &705507993
 GameObject:
   m_ObjectHideFlags: 0
@@ -940,6 +942,24 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1562615782}
   m_CullTransparentMesh: 0
+--- !u!114 &1663613658
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 84760715770bdc24fb30a774f6220b6e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  json: '[]'
+  scriptName: sssa
+  desc: das
+  returnType: tt
+  canCallSingle: 1
+  parameters: []
 --- !u!1 &1728832991
 GameObject:
   m_ObjectHideFlags: 0

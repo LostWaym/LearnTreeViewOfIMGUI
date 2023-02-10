@@ -197,7 +197,7 @@ namespace ScriptTrees
             for (int i = 0; i < parameters.Count; i++)
             {
                 var exp = parameters[i];
-                var value = exp?.Execute(state) ?? func.parameterInfoes[i].type.getDefaultValue();
+                var value = exp?.Execute(state) ?? func.ParameterInfoes[i].type.getDefaultValue();
                 funcParameters.Add(value);
             }
 
@@ -242,16 +242,47 @@ namespace ScriptTrees
     //脚本树方法基础类
     public class ScriptTree
     {
-        public string name;
-        public string desc;
-        public bool canCallSingle;
-        public List<ParameterInfo> parameterInfoes = new List<ParameterInfo>();
-        public ParameterTypeInfo returnType;
+        public ScriptTreeInfo info = new ScriptTreeInfo();
+        public string Name
+        {
+            get { return info.name; }
+            set { info.name = value; }
+        }
+        public string Desc
+        {
+            get { return info.desc; }
+            set { info.desc = value; }
+        }
+        public bool CanCallSingle
+        {
+            get { return info.canCallSingle; }
+            set { info.canCallSingle = value;}
+        }
+        public List<ParameterInfo> ParameterInfoes
+        {
+            get { return info.parameterInfoes; }
+            set { info.parameterInfoes = value;}
+        }
+        public ParameterTypeInfo ReturnType
+        {
+            get { return info.returnType; }
+            set { info.returnType = value; }
+        }
+
 
         public virtual object Execute(ScriptTreeState state)
         {
             return null;
         }
+    }
+
+    public class ScriptTreeInfo
+    {
+        public string name;
+        public string desc;
+        public bool canCallSingle;
+        public List<ParameterInfo> parameterInfoes = new List<ParameterInfo>();
+        public ParameterTypeInfo returnType;
     }
 
     //由c#构成的扩展函数（硬编码）
@@ -271,9 +302,9 @@ namespace ScriptTrees
         public BlockStatNode node;
         public override object Execute(ScriptTreeState state)
         {
-            for (int i = 0; i < parameterInfoes.Count; i++)
+            for (int i = 0; i < ParameterInfoes.Count; i++)
             {
-                var info = parameterInfoes[i];
+                var info = ParameterInfoes[i];
                 object value = state.CheckOutParameter(i);
                 state.SetValue("@" + info.name, value);
             }
@@ -378,75 +409,75 @@ namespace ScriptTrees
                 state.parent?.SetValue(state.CheckOutParameter<string>(0), state.CheckOutParameter(1));
                 return null;
             });
-            previousRegistee.desc = "设置临时变量";
+            previousRegistee.Desc = "设置临时变量";
 
             RegisterFunction("any GetValue key:string", false, (state, state2) =>
             {
                 return state.parent?.GetValue(state.CheckOutParameter<string>(0));
             });
-            previousRegistee.desc = "获取临时变量";
+            previousRegistee.Desc = "获取临时变量";
 
             RegisterFunction("bool Equal left:any right:any", false, (state, state2) =>
             {
                 return state.CheckOutParameter(0)?.Equals(state.CheckOutParameter(1));
             });
-            previousRegistee.desc = "判断两个值是否相等";
+            previousRegistee.Desc = "判断两个值是否相等";
 
             RegisterFunction("void Debug content:any", true, (state, state2) =>
             {
                 Debug.Log(state.CheckOutParameter(0));
                 return null;
             });
-            previousRegistee.desc = "打印一条调试信息";
+            previousRegistee.Desc = "打印一条调试信息";
 
             RegisterFunction("void Heal entityId:int healAmount:float", true, (state, state2) =>
             {
                 return null;
             });
-            previousRegistee.desc = "治疗实体";
+            previousRegistee.Desc = "治疗实体";
 
             RegisterFunction("bool And left:bool right:bool", false, (state, state2) =>
             {
                 return state.CheckOutParameter<bool>(0) && state.CheckOutParameter<bool>(1);
             });
-            previousRegistee.desc = "逻辑且";
+            previousRegistee.Desc = "逻辑且";
 
             RegisterFunction("bool Or left:bool right:bool", false, (state, state2) =>
             {
                 return state.CheckOutParameter<bool>(0) || state.CheckOutParameter<bool>(1);
             });
-            previousRegistee.desc = "逻辑或";
+            previousRegistee.Desc = "逻辑或";
 
             RegisterFunction("int IAdd left:int right:int", false, (state, state2) =>
             {
                 return state.CheckOutParameter<int>(0) + state.CheckOutParameter<int>(1);
             });
-            previousRegistee.desc = "整数相加";
+            previousRegistee.Desc = "整数相加";
 
             RegisterFunction("float FAdd left:float right:float", false, (state, state2) =>
             {
                 return state.CheckOutParameter<float>(0) + state.CheckOutParameter<float>(1);
             });
-            previousRegistee.desc = "浮点数相加";
+            previousRegistee.Desc = "浮点数相加";
 
             RegisterFunction("float Int2Float value:int", false, (state, state2) =>
             {
                 return (float)state.CheckOutParameter<int>(0);
             });
-            previousRegistee.desc = "整数转浮点数";
+            previousRegistee.Desc = "整数转浮点数";
 
             RegisterFunction("int Float2Int value:float", false, (state, state2) =>
             {
                 return (int)state.CheckOutParameter<float>(0);
             });
-            previousRegistee.desc = "浮点数转整数";
+            previousRegistee.Desc = "浮点数转整数";
 
 
             RegisterFunction("Vector3 NewVector3 x:float y:float z:float", false, (state, state2) =>
             {
                 return new Vector3(state.CheckOutParameter<float>(0), state.CheckOutParameter<float>(1), state.CheckOutParameter<float>(2));
             });
-            previousRegistee.desc = "新建三维向量";
+            previousRegistee.Desc = "新建三维向量";
 
             RegisterFunction("void Teleport entityId:int position:Vector3", true, (state, state2) =>
             {
@@ -455,28 +486,28 @@ namespace ScriptTrees
                 Debug.Log($"实体id={id}想要传送到位置={position}");
                 return null;
             });
-            previousRegistee.desc = "传送实体";
+            previousRegistee.Desc = "传送实体";
 
             RegisterFunction("string StringLiteral value:string", false, (state, state2) =>
             {
                 return state.CheckOutParameter<string>(0);
             });
-            previousRegistee.desc = "字符串字面量";
+            previousRegistee.Desc = "字符串字面量";
             RegisterFunction("int IntLiteral value:int", false, (state, state2) =>
             {
                 return state.CheckOutParameter<int>(0);
             });
-            previousRegistee.desc = "整数字面量";
+            previousRegistee.Desc = "整数字面量";
             RegisterFunction("float FloatLiteral value:float", false, (state, state2) =>
             {
                 return state.CheckOutParameter<float>(0);
             });
-            previousRegistee.desc = "浮点数字面量";
+            previousRegistee.Desc = "浮点数字面量";
             RegisterFunction("bool BoolLiteral value:bool", false, (state, state2) =>
             {
                 return state.CheckOutParameter<bool>(0);
             });
-            previousRegistee.desc = "布尔值字面量";
+            previousRegistee.Desc = "布尔值字面量";
 
             OnInit?.Invoke();
         }
@@ -499,10 +530,10 @@ namespace ScriptTrees
         {
             HardCodeScriptTreeFunc func = new HardCodeScriptTreeFunc();
             func.func = executeMethod;
-            func.name = name;
-            func.returnType = GetParameterType(returnType);
-            func.parameterInfoes = infoes;
-            func.canCallSingle = canCallSingle;
+            func.Name = name;
+            func.ReturnType = GetParameterType(returnType);
+            func.ParameterInfoes = infoes;
+            func.CanCallSingle = canCallSingle;
             m_name2func.Add(name, func);
             m_allList.Add(func);
             if (returnType != ParameterTypeInfoes.tvoid.name)
@@ -559,12 +590,12 @@ namespace ScriptTrees
 
         private static void InsertFuncToType2Funcs(ScriptTree func)
         {
-            if (func.returnType == null)
+            if (func.ReturnType == null)
             {
                 GetOrCreateListOfType2Funcs("void").Add(func);
                 return;
             }
-            GetOrCreateListOfType2Funcs(func.returnType.name).Add(func);
+            GetOrCreateListOfType2Funcs(func.ReturnType.name).Add(func);
         }
 
         public static List<ScriptTree> GetReturnTypeOf(string name)
@@ -595,7 +626,6 @@ namespace ScriptTrees
 
         public static void ExecuteStat(BlockStatNode block, ScriptTreeState state, bool isInline = true)
         {
-            ScriptTreeFunctionManager.InitDefaultTypeAndFunc();
             var rootContainer = block.children;
             foreach (var root in rootContainer)
             {

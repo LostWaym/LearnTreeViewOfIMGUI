@@ -6,6 +6,15 @@ using UnityEditor;
 [CustomEditor(typeof(AnonymousScriptTree))]
 public class AnonymousScriptTreeEditor : Editor
 {
+    private void OnEnable()
+    {
+        AnonymousScriptTree tree = (AnonymousScriptTree)target;
+        if (tree.asset == null)
+        {
+            tree.asset = ScriptableObject.CreateInstance<ScriptTreeAsset>();
+        }
+    }
+
     public override void OnInspectorGUI()
     {
         base.OnInspectorGUI();
@@ -18,7 +27,8 @@ public class AnonymousScriptTreeEditor : Editor
                 {
                     tree.json = str;
                     EditorUtility.SetDirty(tree);
-                }
+                },
+                tree.info
             );
         }
         if (GUILayout.Button("输出json"))

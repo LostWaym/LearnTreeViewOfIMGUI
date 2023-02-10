@@ -60,7 +60,6 @@ public class ScriptTreeViewWindow : EditorWindow
         jsonSetter = defJsonSetter;
         jsonGetter = defJsonGetter;
 
-        ScriptTreeFunctionManager.InitDefaultTypeAndFunc();
         state = new TreeViewState();
         treeView = new ScriptTreeView(state);
         treeView.Reload();

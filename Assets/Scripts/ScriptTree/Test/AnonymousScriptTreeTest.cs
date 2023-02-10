@@ -14,6 +14,7 @@ public class AnonymousScriptTreeTest : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        ScriptTreeFunctionManager.InitDefaultTypeAndFunc();
         m_button.onClick.AddListener(() =>
         {
             var tree = m_tree.GetScriptTree();

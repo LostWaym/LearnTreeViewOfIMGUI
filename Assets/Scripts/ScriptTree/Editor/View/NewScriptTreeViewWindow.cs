@@ -13,14 +13,15 @@ public class NewScriptTreeViewWindow : EditorWindow
     private TreeViewState state;
     private ScriptTreeView treeView;
     private string json = "[]";
+    private ScriptTreeInfo scriptTreeInfo;
 
     private Func<string> jsonGetter = null;
     private Action<string> jsonSetter = null;
+    private bool isExternEdit;
 
     private Func<string> defJsonGetter => () => json;
     private Action<string> defJsonSetter => str => json = str;
 
-    private bool isExternEdit;
 
 
     public const int ToolBarHeight = 24;
@@ -63,12 +64,13 @@ public class NewScriptTreeViewWindow : EditorWindow
         window.label = string.Empty;
     }
 
-    public static void OpenWindow(string label, Func<string> jsonGetter, Action<string> jsonSetter)
+    public static void OpenWindow(string label, Func<string> jsonGetter, Action<string> jsonSetter, ScriptTreeInfo info = null)
     {
         var window = GetWindow<NewScriptTreeViewWindow>();
         window.minSize = new Vector2(window.MinWidth, window.MinHeight);
         window.jsonGetter = jsonGetter;
         window.jsonSetter = jsonSetter;
+        window.scriptTreeInfo = info;
         window.isExternEdit = true;
         window.ReadFromJson(window.jsonGetter());
         window.label = label;
@@ -95,7 +97,6 @@ public class NewScriptTreeViewWindow : EditorWindow
         jsonSetter = defJsonSetter;
         jsonGetter = defJsonGetter;
 
-        ScriptTreeFunctionManager.InitDefaultTypeAndFunc();
         state = new TreeViewState();
         treeView = new ScriptTreeView(state);
         treeView.Reload();
@@ -206,6 +207,7 @@ public class NewScriptTreeViewWindow : EditorWindow
         {
             var node = ScriptTreeItemViewHelper.BuildBlockNodeData(treeView.dataSourceRoot);
             jsonSetter(ScriptTreeSerializer.ToJson(node));
+            ShowNotification("保存成功！");
             Debug.Log(jsonGetter());
         }
         if (GUILayout.Button("读取", GUILayout.ExpandHeight(true), GUILayout.ExpandWidth(false)))
@@ -244,17 +246,29 @@ public class NewScriptTreeViewWindow : EditorWindow
     }
 
     Vector2 ListScrollPosition = Vector2.zero;
+    private int fakeCount = 5;
     private void DrawList(Rect rect)
     {
         GUILayout.BeginArea(rect, UsingStyle);
-        ListScrollPosition = GUILayout.BeginScrollView(ListScrollPosition);
-        for (int i = 0; i < 30; i++)
+        DrawListToolBar();
+        ListScrollPosition = GUILayout.BeginScrollView(ListScrollPosition, false, true);
+        for (int i = 0; i < fakeCount; i++)
         {
             string title = $"AnonymousScript#{i}";
             GUILayout.Box(title, GUI.skin.button, GUILayout.Height(24), GUILayout.ExpandWidth(true));
         }
         GUILayout.EndScrollView();
         GUILayout.EndArea();
+    }
+
+    private void DrawListToolBar()
+    {
+        EditorGUILayout.BeginHorizontal();
+        if (GUILayout.Button("新建"))
+        {
+            fakeCount++;
+        }
+        EditorGUILayout.EndHorizontal();
     }
 
     private void DrawExtraInfo(Rect rect)
@@ -289,10 +303,52 @@ public class NewScriptTreeViewWindow : EditorWindow
     private void DrawInspector(Rect rect)
     {
         GUILayout.BeginArea(rect, UsingStyle);
-        if (treeView.selectedView != null)
+        EditorGUIUtility.labelWidth = 96;
+        if (inspectorType == 0)
+        {
+            DrawNodeInspector();
+        }
+        else if (inspectorType == 1)
+        {
+            DrawScriptInspector();
+        }
+        GUILayout.EndArea();
+    }
+
+    private void DrawNodeInspector()
+    {
+        if (treeView.selectedView != null && treeView.selectedView.onGUI != null)
         {
             treeView.selectedView.onGUI?.Invoke(treeView);
         }
-        GUILayout.EndArea();
+        else
+        {
+            EditorGUILayout.LabelField("空空如也！");
+        }
+    }
+
+    private void DrawScriptInspector()
+    {
+        if (scriptTreeInfo == null)
+        {
+            EditorGUILayout.LabelField("空空如也！");
+        }
+        else
+        {
+            scriptTreeInfo.name = EditorGUILayout.TextField("脚本名", scriptTreeInfo.name);
+            scriptTreeInfo.desc = EditorGUILayout.TextField("描述", scriptTreeInfo.desc);
+            scriptTreeInfo.canCallSingle = EditorGUILayout.Toggle("能作为动作", scriptTreeInfo.canCallSingle);
+        }
+    }
+
+
+
+
+
+
+
+    private void ShowNotification(string content)
+    {
+        ShowNotification(new GUIContent(content));
     }
 }

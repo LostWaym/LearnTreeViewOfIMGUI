@@ -9,6 +9,15 @@ using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
 
+public static class ScriptTreeOnLoad
+{
+    [InitializeOnLoadMethod]
+    public static void Method()
+    {
+        ScriptTreeFunctionManager.InitDefaultTypeAndFunc();
+    }
+}
+
 public class NodeItemView
 {
     public int id;
@@ -180,9 +189,9 @@ public static class ScriptTreeItemViewHelper
         view.canRemove = true;
         view.canRename = false;
         view.type = "func";
-        view.name = func.name; 
-        view.displayName = $"#调用 {func.name}()";
-        FillParameter(view, func.parameterInfoes, exp?.parameters);
+        view.name = func.Name; 
+        view.displayName = $"#调用 {func.Name}()";
+        FillParameter(view, func.ParameterInfoes, exp?.parameters);
 
         view.onClick = tree =>
         {
@@ -191,9 +200,9 @@ public static class ScriptTreeItemViewHelper
                 if (ret == null)
                     return;
 
-                view.name = ret.name;
-                view.displayName = $"#调用 {ret.name}()";
-                FillParameter(view, ret.parameterInfoes, null);
+                view.name = ret.Name;
+                view.displayName = $"#调用 {ret.Name}()";
+                FillParameter(view, ret.ParameterInfoes, null);
                 tree.SetDirty();
             });
         };
@@ -246,10 +255,10 @@ public static class ScriptTreeItemViewHelper
             if (node is CallFuncExpNode callFunc)
             {
                 var func = ScriptTreeFunctionManager.GetFunction(callFunc.funcName);
-                FillParameter(view, func.parameterInfoes, callFunc.parameters);
+                FillParameter(view, func.ParameterInfoes, callFunc.parameters);
                 data.literalValue = false;
                 data.funcName = callFunc.funcName;
-                view.displayName = $"{localName}: {func.name}()";
+                view.displayName = $"{localName}: {func.Name}()";
             }
             else if (node is LiteralExpNode literalExpNode)
             {
@@ -330,12 +339,12 @@ public static class ScriptTreeItemViewHelper
                         if (ret == null)
                             return;
 
-                        FillParameter(view, ret.parameterInfoes, null);
+                        FillParameter(view, ret.ParameterInfoes, null);
                         data.isLiteral = false;
                         data.paramInfo2 = null;
                         data.literalValue = null;
-                        data.funcName = ret.name;
-                        view.displayName = $"{localName}: {ret.name}()";
+                        data.funcName = ret.Name;
+                        view.displayName = $"{localName}: {ret.Name}()";
                         tree.SetDirty();
                     }, typeInfo);
                 }
@@ -494,9 +503,9 @@ public static class ScriptTreeItemViewHelper
 
         var newList = list.Where((func) =>
         {
-            return func.canCallSingle;
+            return func.CanCallSingle;
         }).ToList();
-        List<string> names = newList.Select(x => x.name).ToList();
+        List<string> names = newList.Select(x => x.Name).ToList();
         SelectionFormWindow.OpenWindow(names, (index) =>
         {
             callback?.Invoke(index == -1 ? null : newList[index]);
@@ -516,7 +525,7 @@ public static class ScriptTreeItemViewHelper
             ScriptTreeFunctionManager.GetReturnTypeOf(ParameterTypeInfoes.tany.name).ForEach(b => list.Add(b));
         }
 
-        List<string> names = list.Select(x => x.name).ToList();
+        List<string> names = list.Select(x => x.Name).ToList();
         SelectionFormWindow.OpenWindow(names, (index) =>
         {
             callback?.Invoke(index == -1 ? null : list[index]);
